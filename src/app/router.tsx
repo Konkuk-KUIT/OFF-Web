@@ -17,11 +17,11 @@ export default function AppRouter() {
         {/* 헤더 + 하단네비 공통 레이아웃 */}
         <Route element={<Headers />}>
           <Route element={<BottomNavLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/project" element={<Project />} />
-            <Route path="/notice" element={<Notice />} />
-            <Route path="/my" element={<My />} />
+            <Route index element={<Home />} />
+            <Route path="chat" element={<Chat />} />
+            <Route path="project" element={<Project />} />
+            <Route path="notice" element={<Notice />} />
+            <Route path="my" element={<My />} />
           </Route>
         </Route>
 
