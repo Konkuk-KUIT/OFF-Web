@@ -1,4 +1,26 @@
+import { useState } from "react";
+
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // 이메일 형식 체크
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // 버튼 활성화 조건: 이메일과 비밀번호가 모두 입력되고 이메일 형식이 유효할 때
+  const isFormValid = email.trim() !== "" && password.trim() !== "" && isValidEmail(email);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isFormValid) {
+      // TODO: 로그인 로직 구현
+      console.log("로그인 시도:", { email, password });
+    }
+  };
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col items-center justify-center px-4">
       <div className="w-full space-y-6">
@@ -9,7 +31,7 @@ export default function Login() {
         </div>
 
         {/* Form */}
-        <form className="space-y-5">
+        <form className="space-y-5" onSubmit={handleSubmit}>
           {/* Email Input */}
           <div className="space-y-2">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -18,6 +40,8 @@ export default function Login() {
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:bg-white"
               placeholder="이메일을 입력해주세요"
             />
@@ -31,6 +55,8 @@ export default function Login() {
             <input
               id="password"
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:bg-white"
               placeholder="비밀번호를 입력해주세요"
             />
@@ -39,7 +65,12 @@ export default function Login() {
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800"
+            disabled={!isFormValid}
+            className={`w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors ${
+              isFormValid
+                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 cursor-pointer"
+                : "bg-gray-300 cursor-not-allowed"
+            }`}
           >
             로그인
           </button>
