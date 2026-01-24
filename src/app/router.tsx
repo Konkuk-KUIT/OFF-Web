@@ -5,6 +5,7 @@ import BottomNavLayout from "../layouts/bottomNavLayout";
 
 import Home from "../pages/home/home";
 import Login from "../pages/auth/login";
+import ProfileRegister from "../pages/auth/profile-register";
 import Chat from "../pages/chat/chat";
 import My from "../pages/my/my";
 import Notice from "../pages/notice/notice";
@@ -27,6 +28,7 @@ export default function AppRouter() {
 
         {/* 인증 페이지 (레이아웃 분리) */}
         <Route path="/login" element={<Login />} />
+        <Route path="/profile-register" element={<ProfileRegister />} />
 
         {/* 없는 경로 */}
         <Route path="*" element={<Navigate to="/" replace />} />

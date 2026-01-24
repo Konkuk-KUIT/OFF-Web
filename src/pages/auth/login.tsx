@@ -22,13 +22,21 @@ export default function Login() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col items-center justify-center px-4">
-      <div className="w-full space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-center text-2xl font-semibold text-gray-900">로그인</h1>
-          <p className="mt-2 text-left text-sm text-gray-600">계정에 로그인하여 시작하세요</p>
-        </div>
+    <main className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col bg-white">
+      {/* Header */}
+      <header className="flex items-center gap-4 border-b border-gray-200 px-4 py-4">
+        {/* TODO: 뒤로가기 버튼 컴포넌트 추가 */}
+        <div className="w-6" />
+        <h1 className="flex-1 text-center text-lg font-semibold text-gray-900">로그인</h1>
+        <div className="w-6" /> {/* Spacer for centering */}
+      </header>
+
+      <div className="flex flex-1 px-4 py-6">
+        <div className="w-full space-y-6">
+          {/* Subtitle */}
+          <div>
+            <p className="text-left text-sm text-gray-600">계정에 로그인하여 시작하세요</p>
+          </div>
 
         {/* Form */}
         <form className="space-y-5" onSubmit={handleSubmit}>
@@ -77,11 +85,14 @@ export default function Login() {
         </form>
 
         {/* Sign Up Link */}
-        <div className="flex items-center justify-center gap-1 text-sm">
-          <span className="text-gray-600">계정이 없으신가요?</span>
-          <a href="#" className="text-gray-600 hover:text-gray-700 hover:underline">
-            회원가입
-          </a>
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-1 text-sm">
+            <span className="text-gray-600">계정이 없으신가요?</span>
+            <a href="#" className="text-gray-600 hover:text-gray-700 hover:underline">
+              회원가입
+            </a>
+          </div>
+          <div className="border-t border-gray-200"></div>
         </div>
 
         {/* Google Login Button */}
@@ -113,6 +124,7 @@ export default function Login() {
           </svg>
           <span>구글 로그인</span>
         </button>
+        </div>
       </div>
     </main>
   );
