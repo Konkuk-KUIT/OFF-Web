@@ -23,26 +23,25 @@ export default function Login() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col bg-white">
-      {/* Header */}
-      <header className="flex items-center gap-4 border-b border-gray-200 px-4 py-4">
-        {/* TODO: 뒤로가기 버튼 컴포넌트 추가 */}
-        <div className="w-6" />
-        <h1 className="flex-1 text-center text-lg font-semibold text-gray-900">로그인</h1>
-        <div className="w-6" /> {/* Spacer for centering */}
-      </header>
-
       <div className="flex flex-1 px-4 py-6">
         <div className="w-full space-y-6">
+          {/* Title */}
+          <div>
+            <h1 className="login-title">로그인</h1>
+          </div>
+
           {/* Subtitle */}
           <div>
-            <p className="text-left text-sm text-gray-600">계정에 로그인하여 시작하세요</p>
+            <p className="login-subtitle text-left text-sm">
+              계정에 로그인하여 시작하세요
+            </p>
           </div>
 
         {/* Form */}
         <form className="space-y-5" onSubmit={handleSubmit}>
           {/* Email Input */}
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="login-label block text-sm font-medium">
               이메일
             </label>
             <input
@@ -50,14 +49,14 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:bg-white"
+              className="login-input w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:bg-white"
               placeholder="이메일을 입력해주세요"
             />
           </div>
 
           {/* Password Input */}
           <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="login-label block text-sm font-medium">
               비밀번호
             </label>
             <input
@@ -65,7 +64,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:bg-white"
+              className="login-input w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:bg-white"
               placeholder="비밀번호를 입력해주세요"
             />
           </div>
@@ -74,7 +73,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={!isFormValid}
-            className={`w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors ${
+            className={`button-primary-text w-full rounded-lg px-4 py-3 transition-colors ${
               isFormValid
                 ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 cursor-pointer"
                 : "bg-gray-300 cursor-not-allowed"
@@ -85,10 +84,10 @@ export default function Login() {
         </form>
 
         {/* Sign Up Link */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-center gap-1 text-sm">
-            <span className="text-gray-600">계정이 없으신가요?</span>
-            <a href="#" className="text-gray-600 hover:text-gray-700 hover:underline">
+        <div className="mt-20 space-y-4">
+          <div className="flex items-center justify-center gap-1">
+            <span className="login-signup-text">계정이 없으신가요?</span>
+            <a href="#" className="login-signup-link">
               회원가입
             </a>
           </div>
@@ -122,7 +121,7 @@ export default function Login() {
               fill="#EA4335"
             />
           </svg>
-          <span>구글 로그인</span>
+          <span className="login-google-text">구글 로그인</span>
         </button>
         </div>
       </div>

@@ -46,3 +46,145 @@ button {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* CSS Variables */
+:root {
+  --gray-gray_800: #333;
+  --gray-gray_700: #424242;
+  --gray-gray_400: #858585;
+  --gray-gray_900: #121212;
+  --gray-white: #FFF;
+  --blue-background-card-coolgray: #F2F3F5;
+}
+
+/* Login Page Styles */
+.login-title {
+  color: var(--gray-gray_800, #333);
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 24px; /* 150% */
+  letter-spacing: -0.16px;
+}
+
+.login-label {
+  color: var(--gray-gray_700, #424242);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 22px; /* 157.143% */
+}
+
+.login-subtitle {
+  color: var(--gray-gray_400, #858585);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 22px; /* 157.143% */
+}
+
+.login-signup-text {
+  color: var(--gray-gray_700, #424242);
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 18px; /* 150% */
+}
+
+.login-signup-link {
+  color: var(--gray-gray_700, #424242);
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 18px; /* 150% */
+  text-decoration: underline;
+}
+
+.login-google-text {
+  color: #000;
+  text-align: center;
+  font-family: Pretendard, sans-serif;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.login-input {
+  font-style: normal;
+}
+
+.login-input::placeholder {
+  color: var(--gray-gray_400, #858585);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 22px; /* 157.143% */
+}
+
+/* Profile Register Page Styles */
+.profile-multiple-select {
+  color: #424242;
+}
+
+.profile-button {
+  color: var(--gray-gray_900, #121212);
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 18px; /* 150% */
+}
+
+.profile-button.selected {
+  color: #fff;
+}
+
+.profile-add-button {
+  display: flex;
+  padding: 14px 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-radius: 8px;
+  background: var(--blue-background-card-coolgray, #F2F3F5);
+  color: #000;
+  font-family: Inter, sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+  letter-spacing: -0.1px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-portfolio-input {
+  background: transparent;
+  border: none;
+  font-style: normal;
+}
+
+input,
+textarea {
+  font-style: normal;
+}
+
+.button-primary-text {
+  color: var(--gray-white, #FFF);
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 24px; /* 150% */
+  letter-spacing: -0.16px;
+}
