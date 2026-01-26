@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import Headers from "../layouts/headers";
-import BottomNavLayout from "../layouts/bottomNavLayout";
+import AppFrame from "../layouts/AppFrame";
 
 import Home from "../pages/home/home";
 import Login from "../pages/auth/login";
@@ -15,18 +14,16 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 헤더 + 하단네비 공통 레이아웃 */}
-        <Route element={<Headers />}>
-          <Route element={<BottomNavLayout />}>
-            <Route index element={<Home />} />
-            <Route path="chat" element={<Chat />} />
-            <Route path="project" element={<Project />} />
-            <Route path="notice" element={<Notice />} />
-            <Route path="my" element={<My />} />
-          </Route>
+        {/* 공통 프레임(헤더+스크롤영역+하단네비) */}
+        <Route element={<AppFrame />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/project" element={<Project />} />
+          <Route path="/notice" element={<Notice />} />
+          <Route path="/my" element={<My />} />
         </Route>
 
-        {/* 인증 페이지 (레이아웃 분리) */}
+        {/* 프레임 없는 페이지 */}
         <Route path="/login" element={<Login />} />
         <Route path="/profile-register" element={<ProfileRegister />} />
 
