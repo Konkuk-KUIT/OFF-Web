@@ -1,4 +1,3 @@
-import { Outlet } from "react-router-dom";
 import BottomNavItem from "./bottomNav/bottomNavItem";
 import HomeIcon from "./bottomNav/icons/HomeIcon";
 import AlarmIcon from "./bottomNav/icons/AlarmIcon";
@@ -9,10 +8,6 @@ import MyIcon from "./bottomNav/icons/MyIcon";
 export default function BottomNavLayout() {
   return (
     <>
-      <div className="pb-[83px]">
-        <Outlet />
-      </div>
-
       <footer
         className="
           fixed bottom-0 left-0 z-50
