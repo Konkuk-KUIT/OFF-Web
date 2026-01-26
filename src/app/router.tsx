@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import Headers from "../layouts/headers";
+import Headers from "../layouts/headePrev";
 import BottomNavLayout from "../layouts/bottomNavLayout";
 
 import Home from "../pages/home/home";
