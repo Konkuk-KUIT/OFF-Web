@@ -7,7 +7,7 @@ export default function AppFrame() {
   return (
     <div className="app-frame">
       <Headers />
-      <main className="app-content scrollbar-hide">
+      <main className="app-content scrollbar-hide bg-white">
         <Outlet />
       </main>
       <BottomNav />
