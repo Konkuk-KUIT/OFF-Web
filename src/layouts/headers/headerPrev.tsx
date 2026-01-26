@@ -1,5 +1,5 @@
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import PrevIcon from "../assets/layouts/header/Prev.svg";
+import { useLocation, useNavigate } from "react-router-dom";
+import PrevIcon from "../../assets/layouts/header/Prev.svg";
 
 export default function Headers() {
   const navigate = useNavigate();
@@ -29,8 +29,6 @@ export default function Headers() {
           {title}
         </h1>
       </header>
-
-      <Outlet />
     </>
   );
 }
