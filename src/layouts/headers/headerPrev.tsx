@@ -17,7 +17,7 @@ export default function Headers() {
 
   return (
     <>
-      <header className="fixed top-0 z-50 w-full h-[5%] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] flex items-center relative">
+      <header className="fixed top-0 z-50 w-full h-[5%] bg-white flex items-center relative">
         <img
           src={PrevIcon}
           alt="back"
