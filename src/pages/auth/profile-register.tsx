@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
 
 export default function ProfileRegister() {
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   const [nickname, setNickname] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [experience, setExperience] = useState("");
