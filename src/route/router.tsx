@@ -16,9 +16,13 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 로그인 필요한 구역 */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppFrame />}>
+        <Route element={<AppFrame />}>
+          {/* 공개 */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/profile-register" element={<ProfileRegister />} />
+
+          {/* 보호 */}
+          <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Home />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/project" element={<Project />} />
@@ -27,11 +31,6 @@ export default function AppRouter() {
           </Route>
         </Route>
 
-        {/* 로그인 없이 접근 가능한 페이지 */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile-register" element={<ProfileRegister />} />
-
-        {/* 없는 경로 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
