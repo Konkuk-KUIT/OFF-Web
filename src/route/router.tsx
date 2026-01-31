@@ -8,7 +8,13 @@ import Home from "../pages/home/home";
 import Login from "../pages/auth/login";
 import ProfileRegister from "../pages/auth/profile-register";
 import Chat from "../pages/chat/chat";
+
 import My from "../pages/my/my";
+import MyEdit from "../pages/my/myEdit";
+import Payments from "../pages/my/myPayments";
+import Invitations from "../pages/my/myInvitations";
+import Projects from "../pages/my/myProjects";
+
 import Notice from "../pages/notice/notice";
 import Project from "../pages/project/project";
 
@@ -28,6 +34,10 @@ export default function AppRouter() {
             <Route path="/project" element={<Project />} />
             <Route path="/notice" element={<Notice />} />
             <Route path="/my" element={<My />} />
+            <Route path="/my/edit" element={<MyEdit />} />
+            <Route path="my/payments" element={<Payments />} />
+            <Route path="my/invitations" element={<Invitations />} />
+            <Route path="my/projects" element={<Projects />} />
           </Route>
         </Route>
 
