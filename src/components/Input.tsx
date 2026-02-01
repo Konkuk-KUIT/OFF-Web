@@ -4,6 +4,7 @@ type BaseInputProps = {
   label?: string;
   required?: boolean;
   error?: string;
+  className?: string;
 };
 
 type InputProps = BaseInputProps &
@@ -45,7 +46,7 @@ export default function Input(props: Props) {
       ) : (
         <input
           id={inputId}
-          type={rest.type || "text"}
+          type={(rest as InputHTMLAttributes<HTMLInputElement>).type ?? "text"}
           className={finalClassName}
           {...(rest as InputHTMLAttributes<HTMLInputElement>)}
         />
