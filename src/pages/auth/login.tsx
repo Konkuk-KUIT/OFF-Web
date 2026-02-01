@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -73,11 +74,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={!isFormValid}
-            className={`button-primary-text w-full rounded-lg px-4 py-3 transition-colors ${
-              isFormValid
-                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 cursor-pointer"
-                : "bg-gray-300 cursor-not-allowed"
-            }`}
+            className="auth-primary-button button-primary-text"
           >
             로그인
           </button>
@@ -87,9 +84,9 @@ export default function Login() {
         <div className="mt-20 space-y-4">
           <div className="flex items-center justify-center gap-1">
             <span className="login-signup-text">계정이 없으신가요?</span>
-            <a href="#" className="login-signup-link">
+            <Link to="/signup" className="login-signup-link">
               회원가입
-            </a>
+            </Link>
           </div>
           <div className="border-t border-gray-200"></div>
         </div>

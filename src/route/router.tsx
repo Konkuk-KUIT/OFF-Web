@@ -6,6 +6,7 @@ import ProtectedRoute from "./ProtectedRoute";
 
 import Home from "../pages/home/home";
 import Login from "../pages/auth/login";
+import Signup from "../pages/auth/signup";
 import ProfileRegister from "../pages/auth/profile-register";
 import Chat from "../pages/chat/chat";
 
@@ -25,6 +26,7 @@ export default function AppRouter() {
         <Route element={<AppFrame />}>
           {/* 공개 */}
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/profile-register" element={<ProfileRegister />} />
 
           {/* 보호 */}

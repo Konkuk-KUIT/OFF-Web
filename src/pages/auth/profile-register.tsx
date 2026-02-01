@@ -1,8 +1,8 @@
 import { useState } from "react";
-//import { useNavigate } from "react-router-dom";
+import Input from "../../components/Input";
+import { ROLES, EXPERIENCES } from "../../constants/profile";
 
 export default function ProfileRegister() {
-  //const navigate = useNavigate();
   const [nickname, setNickname] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [experience, setExperience] = useState("");
@@ -12,14 +12,14 @@ export default function ProfileRegister() {
   ]);
   const [introduction, setIntroduction] = useState("");
 
-  const roles = ["기획자", "개발자", "디자이너", "마케터"];
-  const experiences = ["없음", "1회", "2회", "3회", "4회", "5회 이상"];
-
   const toggleRole = (role: string) => {
     setSelectedRoles((prev) =>
       prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
     );
   };
+
+  const roles = [...ROLES];
+  const experiences = [...EXPERIENCES];
 
   const updatePortfolio = (index: number, field: "description" | "link", value: string) => {
     setPortfolios((prev) =>
@@ -44,34 +44,28 @@ export default function ProfileRegister() {
   };
 
   return (
-    <main className="mx-auto flex h-screen w-full max-w-screen-sm flex-col overflow-hidden bg-white">
+    <main className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col bg-white">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b border-gray-200 px-4 py-4">
+      <header className="flex shrink-0 items-center gap-4 border-b border-gray-200 px-4 py-4 bg-white">
         {/* TODO: 뒤로가기 버튼 컴포넌트 추가 */}
         <div className="w-6" />
         <h1 className="login-title flex-1 text-center">프로필 등록</h1>
-        <div className="w-6" /> {/* Spacer for centering */}
+        <div className="w-6" />
       </header>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4">
-        <p className="login-subtitle mt-4">정보를 입력하고 OFF에 가입하세요.</p>
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
+        <p className="login-subtitle text-left text-sm mt-4">정보를 입력하고 OFF에 가입하세요.</p>
 
-        <form className="mt-6 space-y-6 pb-6" onSubmit={handleSubmit}>
-          {/* 닉네임 */}
-          <div className="space-y-2">
-            <label htmlFor="nickname" className="login-label block">
-              닉네임<span className="text-red-500">*</span>
-            </label>
-            <input
-              id="nickname"
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="login-input w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:bg-white"
-              placeholder="프로젝트에 표시할 닉네임을 입력해주세요."
-            />
-          </div>
+        <form className="mt-6 space-y-6 pb-12" onSubmit={handleSubmit}>
+          <Input
+            id="nickname"
+            type="text"
+            label="닉네임"
+            required
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="프로젝트에 표시할 닉네임을 입력해주세요."
+          />
 
           {/* 프로젝트 희망 직무 */}
           <div className="space-y-2">
@@ -160,32 +154,25 @@ export default function ProfileRegister() {
             ))}
           </div>
 
-          {/* 내 소개 입력하기 */}
-          <div className="space-y-2">
-            <label htmlFor="introduction" className="login-label block">
-              내 소개 입력하기
-            </label>
-            <textarea
-              id="introduction"
-              value={introduction}
-              onChange={(e) => setIntroduction(e.target.value)}
-              rows={6}
-              className="login-input w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:bg-white"
-              placeholder="크리에이터와 파트너에게 본인을 소개하세요."
-            />
+          <Input
+            id="introduction"
+            as="textarea"
+            label="내 소개 입력하기"
+            value={introduction}
+            onChange={(e) => setIntroduction(e.target.value)}
+            placeholder="크리에이터와 파트너에게 본인을 소개하세요."
+            rows={6}
+          />
+
+          <div className="mt-6">
+            <button
+              type="submit"
+              className="auth-primary-button button-primary-text"
+            >
+              저장하기
+            </button>
           </div>
         </form>
-      </div>
-
-      {/* 저장하기 버튼 - Fixed at bottom */}
-      <div className="border-t border-gray-200 bg-white px-4 py-4">
-        <button
-          type="submit"
-          onClick={handleSubmit}
-          className="button-primary-text w-full rounded-lg bg-blue-600 px-4 py-3 transition-colors hover:bg-blue-700 active:bg-blue-800"
-        >
-          저장하기
-        </button>
       </div>
     </main>
   );
