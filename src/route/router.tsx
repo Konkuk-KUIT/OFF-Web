@@ -28,6 +28,7 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile-register" element={<ProfileRegister />} />
+          <Route path="/notice" element={<Notice />} />
 
           {/* 보호 */}
           <Route element={<ProtectedRoute />}>

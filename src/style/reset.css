@@ -67,6 +67,7 @@ button {
 :root {
   --gray-gray_800: #333;
   --gray-gray_700: #424242;
+  --gray-gray_500: #666;
   --gray-gray_400: #858585;
   --gray-gray_900: #121212;
   --gray-white: #FFF;
@@ -255,4 +256,69 @@ textarea {
 .auth-primary-button:disabled {
   background: #d1d5db;
   cursor: not-allowed;
+}
+
+/* Header (뒤로가기 헤더) 제목 - Heading/heading_l */
+.header-prev-title {
+  display: flex;
+  width: 173px;
+  height: 25px;
+  flex-direction: column;
+  justify-content: center;
+  color: var(--gray-gray_900, #121212);
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 28px; /* 155.556% */
+  letter-spacing: -0.18px;
+}
+
+/* Notice (알림) card */
+.notice-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 345px;
+  max-width: 100%;
+  min-height: 124px;
+  padding: 18px 16px 5px 16px;
+  align-items: stretch;
+  border-radius: 8px;
+  background: var(--blue-background-card-coolgray, #F2F3F5);
+  box-sizing: border-box;
+}
+
+.notice-card-title {
+  color: var(--gray-gray_900, #121212);
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 22px; /* 137.5% */
+}
+
+.notice-card-content {
+  color: var(--gray-gray_900, #121212);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 22px; /* 157.143% */
+}
+
+.notice-card-time {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  color: var(--gray-gray_500, #666);
+  text-overflow: ellipsis;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 18px; /* 150% */
 }

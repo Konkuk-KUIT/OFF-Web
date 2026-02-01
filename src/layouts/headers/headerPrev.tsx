@@ -9,7 +9,7 @@ export default function Headers() {
     "/": "Home",
     "/chat": "Chat",
     "/project": "Project",
-    "/notice": "Notice",
+    "/notice": "알림",
     "/my": "My",
   };
 
@@ -25,7 +25,7 @@ export default function Headers() {
           className="absolute left-4 w-6 h-6 cursor-pointer"
         />
 
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold">
+        <h1 className="header-prev-title absolute left-1/2 -translate-x-1/2">
           {title}
         </h1>
       </header>
