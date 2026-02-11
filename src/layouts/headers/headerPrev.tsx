@@ -7,7 +7,7 @@ export default function Headers() {
 
   const titleMap: Record<string, string> = {
     "/": "Home",
-    "/chat": "Chat",
+    "/chat": "채팅",
     "/project": "Project",
     "/notice": "알림",
     "/my": "My",

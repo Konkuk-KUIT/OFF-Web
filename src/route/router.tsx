@@ -33,7 +33,7 @@ export default function AppRouter() {
           {/* 보호 */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Home />} />
-            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/*" element={<Chat />} />
             <Route path="/project" element={<Project />} />
             <Route path="/notice" element={<Notice />} />
             <Route path="/my" element={<My />} />
