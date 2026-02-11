@@ -9,8 +9,11 @@ export default function Headers() {
     "/": "Home",
     "/chat": "채팅",
     "/project": "Project",
+    "/project/create": "프로젝트 생성",
+    "/project/partner-recruit": "파트너 모집",
     "/notice": "알림",
     "/my": "My",
+    "/account": "결제하기",
   };
 
   const title = titleMap[location.pathname] ?? "";

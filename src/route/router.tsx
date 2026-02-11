@@ -18,6 +18,9 @@ import Projects from "../pages/my/myProjects";
 
 import Notice from "../pages/notice/notice";
 import Project from "../pages/project/project";
+import ProjectCreate from "../pages/project/projectCreate";
+import PartnerRecruit from "../pages/project/partnerRecruit";
+import Account from "../pages/account";
 
 export default function AppRouter() {
   return (
@@ -28,7 +31,7 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile-register" element={<ProfileRegister />} />
-          
+          <Route path="/account" element={<Account />} />
 
           {/* 보호 */}
           <Route element={<ProtectedRoute />}>
@@ -36,6 +39,8 @@ export default function AppRouter() {
             {/* chat.tsx 안에서 /chat, /chat/:id를 처리 */}
             <Route path="/chat/*" element={<Chat />} />
             <Route path="/project" element={<Project />} />
+            <Route path="/project/create" element={<ProjectCreate />} />
+            <Route path="/project/partner-recruit" element={<PartnerRecruit />} />
             <Route path="/notice" element={<Notice />} />
             <Route path="/my" element={<My />} />
             <Route path="/my/edit" element={<MyEdit />} />
