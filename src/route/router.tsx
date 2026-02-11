@@ -28,11 +28,12 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile-register" element={<ProfileRegister />} />
-          <Route path="/notice" element={<Notice />} />
+          
 
           {/* 보호 */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Home />} />
+            {/* chat.tsx 안에서 /chat, /chat/:id를 처리 */}
             <Route path="/chat/*" element={<Chat />} />
             <Route path="/project" element={<Project />} />
             <Route path="/notice" element={<Notice />} />
