@@ -6,15 +6,12 @@ import LogoPrev from "./headers/logoHeader";
 export default function Headers() {
   const { pathname } = useLocation();
 
-  // 채팅방(/chat/:id)은 자체 헤더 사용 → 앱 헤더 숨김
-  if (/^\/chat\/[^/]+/.test(pathname)) {
-    return null;
-  }
 
-  // 뒤로가기 헤더가 필요한 페이지들
-  const prevHeaderRoutes = ["/chat", "/project", "/project/create", "/project/partner-recruit", "/notice", "/my", "/my/edit", "/my/payments", "/my/invitations", "/my/projects", "/account"];
 
-  const isPrev = prevHeaderRoutes.includes(pathname);
+  // 뒤로가기 헤더가 필요한 페이지들 (/partner/:id 포함)
+  const prevHeaderRoutes = ["/chat", "/project", "/project/create", "/project/partner-recruit", "/notice", "/my", "/my/edit", "/home/profile-edit", "/my/payments", "/my/invitations", "/my/projects", "/account", "/partner/supported", "/partner/supported/confirm"];
+  const isPrev = prevHeaderRoutes.includes(pathname) || 
+               [/^\/partner\//, /^\/project\/\d+/, /^\/chat\/[^/]+/].some(regex => regex.test(pathname));
 
   return isPrev ? <HeaderPrev /> : <LogoPrev />;
 }
