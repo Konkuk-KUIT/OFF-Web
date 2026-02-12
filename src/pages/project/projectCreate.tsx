@@ -40,22 +40,6 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: "-0.18px",
 };
 
-const detailStyle: React.CSSProperties = {
-  display: "flex",
-  width: "345px",
-  maxWidth: "100%",
-  height: "24px",
-  flexDirection: "column",
-  justifyContent: "center",
-  flexShrink: 0,
-  color: "var(--gray-gray_300, #999)",
-  fontFamily: "Inter, sans-serif",
-  fontSize: "12px",
-  fontStyle: "normal",
-  fontWeight: 500,
-  lineHeight: "18px",
-};
-
 const detailTextStyle: React.CSSProperties = {
   color: "var(--gray-gray_300, #999)",
   fontFamily: "Inter, sans-serif",
