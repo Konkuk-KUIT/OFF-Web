@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 import Page from "../../components/Page";
 import type { ChatItem, TabType } from "./types";
 
+/** 새 메시지가 왔을 때 표시할 항목 (lastMessage: 새로운 채팅 메세지, timestamp: now) */
+const NEW_MESSAGE_LABEL = "새로운 채팅 메세지";
+const NEW_MESSAGE_TIME = "now";
+
 const MOCK_CHATS: ChatItem[] = [
   {
     id: "1",
     nickname: "닉네임",
     projectName: "프로젝트명",
-    lastMessage: "마지막 채팅 내용",
-    timestamp: "2026.00.00 00:00",
+    lastMessage: NEW_MESSAGE_LABEL,
+    timestamp: NEW_MESSAGE_TIME,
     unreadCount: 3,
   },
   {
@@ -123,6 +127,43 @@ function ChatListItem({ item }: { item: ChatItem }) {
   );
 }
 
+/** 새 메시지가 왔을 때 목록에 보여줄 컴포넌트 (lastMessage: 새로운 채팅 메세지, timestamp: now) */
+function NewMessageChatItem({ item }: { item: ChatItem }) {
+  return (
+    <Link
+      to={`/chat/${item.id}`}
+      className="transition-opacity active:opacity-90"
+      style={cardStyle}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="min-w-0 flex-shrink" style={nicknameStyle}>
+            {item.nickname}
+          </span>
+          {item.projectName && (
+            <span className="shrink-0" style={projectNameStyle}>
+              {item.projectName}
+            </span>
+          )}
+        </div>
+        <p className="mt-1" style={detailXsStyle}>
+          {NEW_MESSAGE_LABEL}
+        </p>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          {item.unreadCount != null && item.unreadCount > 0 ? (
+            <span style={detailXsStyle}>
+              {item.unreadCount} new messages
+            </span>
+          ) : (
+            <span />
+          )}
+          <span style={detailXsStyle}>{NEW_MESSAGE_TIME}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function ChatList() {
   const [activeTab, setActiveTab] = useState<TabType>("project");
 
@@ -167,7 +208,11 @@ export default function ChatList() {
       <ul className="flex w-full flex-col items-center gap-3">
         {MOCK_CHATS.map((item) => (
           <li key={item.id} className="flex w-full justify-center">
-            <ChatListItem item={item} />
+            {item.timestamp === NEW_MESSAGE_TIME ? (
+              <NewMessageChatItem item={item} />
+            ) : (
+              <ChatListItem item={item} />
+            )}
           </li>
         ))}
       </ul>
