@@ -7,13 +7,21 @@ export default function Headers() {
 
   const titleMap: Record<string, string> = {
     "/": "Home",
-    "/chat": "Chat",
+    "/chat": "채팅",
     "/project": "Project",
+    "/project/create": "프로젝트 생성",
+    "/project/partner-recruit": "파트너 모집",
     "/notice": "알림",
     "/my": "My",
+    "/home/profile-edit": "프로필 수정",
+    "/account": "결제하기",
+    "/partner/supported": "지원한 파트너",
+    "/partner/supported/confirm": "지원한 파트너",
   };
-
-  const title = titleMap[location.pathname] ?? "";
+  const title =
+    titleMap[location.pathname] ??
+    ((/^\/partner\/[^/]+/.test(location.pathname) ? "파트너" : "") ||
+      (/^\/chat\/[^/]+/.test(location.pathname) ? "채팅" : ""));
 
   return (
     <>

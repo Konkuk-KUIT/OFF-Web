@@ -5,7 +5,8 @@ import BottomNav from "./bottomNavLayout";
 const HIDE_BOTTOM_NAV_PREFIXES = [
   "/my/edit",
   "/my/payments",
-  "/my/invitations"
+  "/my/invitations",
+  "/account"
 ];
 
 export default function AppFrame() {
