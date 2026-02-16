@@ -79,14 +79,16 @@ export default function ProfileRegister() {
       await signup(payload);
       navigate("/login", { state: { message: "회원가입이 완료되었습니다." } });
     } catch (err: unknown) {
-      const res = (err as { response?: { data?: { message?: string }; status?: number } })
-        ?.response;
+      const ax = err as { response?: { data?: { message?: string }; status?: number }; message?: string };
+      const res = ax?.response;
       if (res?.status === 409) {
         setErrorMessage("이미 사용 중인 이메일입니다.");
+      } else if (res?.data && typeof res.data === "object" && "message" in res.data) {
+        setErrorMessage((res.data as { message?: string }).message ?? "회원가입에 실패했습니다.");
+      } else if (res?.status) {
+        setErrorMessage(`요청이 실패했습니다. (${res.status})`);
       } else {
-        setErrorMessage(
-          (res?.data as { message?: string })?.message ?? "회원가입에 실패했습니다."
-        );
+        setErrorMessage("서버에 연결할 수 없습니다. 주소와 서버 실행 여부를 확인해주세요.");
       }
     } finally {
       setIsSubmitting(false);
