@@ -140,6 +140,15 @@ export default function PartnerRecruit() {
   const [developerPrice, setDeveloperPrice] = useState(150000);
   const [editingDesignerPrice, setEditingDesignerPrice] = useState(false);
   const [editingDeveloperPrice, setEditingDeveloperPrice] = useState(false);
+  const [serviceSummary, setServiceSummary] = useState(
+    "서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리"
+  );
+  const [designerCardTitle, setDesignerCardTitle] = useState("쿠잇 6기 프론트 개발자");
+  const [designerCardDesc, setDesignerCardDesc] = useState("UX/UI 특화 디자이너입니다");
+  const [designerCardExp, setDesignerCardExp] = useState("5회 이상");
+  const [developerCardTitle, setDeveloperCardTitle] = useState("쿠잇 6기 프론트 개발자");
+  const [developerCardDesc, setDeveloperCardDesc] = useState("UX/UI 특화 디자이너입니다");
+  const [developerCardExp, setDeveloperCardExp] = useState("3회");
 
   const totalCost = designerPrice + developerPrice;
   const formatDate = (d: string) =>
@@ -218,11 +227,13 @@ export default function PartnerRecruit() {
       <section>
         <label className="mb-1 block" style={sectionLabelStyle}>서비스 요약</label>
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-          <p className="whitespace-pre-wrap text-sm text-zinc-600">
-            서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕
-            AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및
-            요구사항 바탕 AI로 정리
-          </p>
+          <textarea
+            value={serviceSummary}
+            onChange={(e) => setServiceSummary(e.target.value)}
+            className="min-h-[100px] w-full resize-y bg-transparent text-sm text-zinc-600 outline-none placeholder:text-zinc-400"
+            placeholder="서비스 설명 및 요구사항을 입력하세요."
+            rows={4}
+          />
         </div>
       </section>
 
@@ -270,15 +281,31 @@ export default function PartnerRecruit() {
           </div>
           <article className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
             <div className="flex items-start justify-between gap-2">
-              <h3 style={cardTitleStyle}>
-                쿠잇 6기 프론트 개발자
-              </h3>
+              <input
+                type="text"
+                value={designerCardTitle}
+                onChange={(e) => setDesignerCardTitle(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent outline-none"
+                style={cardTitleStyle}
+              />
               <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" />
             </div>
-            <p className="mt-1" style={cardDescStyle}>UX/UI 특화 디자이너입니다</p>
-            <div className="mt-2 flex items-center justify-between">
+            <input
+              type="text"
+              value={designerCardDesc}
+              onChange={(e) => setDesignerCardDesc(e.target.value)}
+              className="mt-1 w-full bg-transparent outline-none"
+              style={cardDescStyle}
+            />
+            <div className="mt-2 flex items-center justify-between gap-2">
               <span style={projectExpLabelStyle}>프로젝트 경험</span>
-              <span style={projectExpValueStyle}>5회 이상</span>
+              <input
+                type="text"
+                value={designerCardExp}
+                onChange={(e) => setDesignerCardExp(e.target.value)}
+                className="w-20 bg-transparent text-right outline-none"
+                style={projectExpValueStyle}
+              />
             </div>
             <div className="mt-3 flex justify-end">
               <button type="button" className="text-sm font-medium text-zinc-700">
@@ -328,15 +355,31 @@ export default function PartnerRecruit() {
           </div>
           <article className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
             <div className="flex items-start justify-between gap-2">
-              <h3 style={cardTitleStyle}>
-                쿠잇 6기 프론트 개발자
-              </h3>
+              <input
+                type="text"
+                value={developerCardTitle}
+                onChange={(e) => setDeveloperCardTitle(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent outline-none"
+                style={cardTitleStyle}
+              />
               <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" />
             </div>
-            <p className="mt-1" style={cardDescStyle}>UX/UI 특화 디자이너입니다</p>
-            <div className="mt-2 flex items-center justify-between">
+            <input
+              type="text"
+              value={developerCardDesc}
+              onChange={(e) => setDeveloperCardDesc(e.target.value)}
+              className="mt-1 w-full bg-transparent outline-none"
+              style={cardDescStyle}
+            />
+            <div className="mt-2 flex items-center justify-between gap-2">
               <span style={projectExpLabelStyle}>프로젝트 경험</span>
-              <span style={projectExpValueStyle}>3회</span>
+              <input
+                type="text"
+                value={developerCardExp}
+                onChange={(e) => setDeveloperCardExp(e.target.value)}
+                className="w-20 bg-transparent text-right outline-none"
+                style={projectExpValueStyle}
+              />
             </div>
             <div className="mt-3 flex justify-end">
               <button type="button" className="text-sm font-medium text-zinc-700">
