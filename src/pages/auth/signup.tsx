@@ -10,6 +10,19 @@ export type SignupStep1State = {
   password: string;
 };
 
+const VALID_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BIRTH_REGEX = /^\d{4}-\d{2}-\d{2}$/; // YYYY-MM-DD
+const MIN_PASSWORD_LENGTH = 8;
+
+function isValidEmail(value: string): boolean {
+  return VALID_EMAIL_REGEX.test(value.trim());
+}
+function isValidBirth(value: string): boolean {
+  if (!BIRTH_REGEX.test(value.trim())) return false;
+  const d = new Date(value);
+  return !Number.isNaN(d.getTime());
+}
+
 export default function Signup() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -22,6 +35,7 @@ export default function Signup() {
   const [agreeMarketing, setAgreeMarketing] = useState(false);
   const [agreeAll, setAgreeAll] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [touched, setTouched] = useState({ email: false, birth: false, password: false, passwordConfirm: false });
 
   const handleAgreeAll = (checked: boolean) => {
     setAgreeAll(checked);
@@ -48,19 +62,27 @@ export default function Signup() {
     else setAgreeAll(agreeTerms && agreePrivacy && checked);
   };
 
+  const emailError = email.trim() && !isValidEmail(email) ? "유효한 이메일 주소를 입력해주세요." : null;
+  const birthError = birth.trim() && !isValidBirth(birth) ? "반드시 YYYY-MM-DD 형식을 따라야 합니다." : null;
+  const passwordError = password && password.length < MIN_PASSWORD_LENGTH ? "최소 8자 이상 입력해야 합니다." : null;
+  const passwordConfirmError = passwordConfirm && password !== passwordConfirm ? "비밀번호가 일치하지 않습니다." : null;
+
   const isFormValid =
     name.trim() !== "" &&
     birth.trim() !== "" &&
+    isValidBirth(birth) &&
     email.trim() !== "" &&
-    password.trim() !== "" &&
+    isValidEmail(email) &&
+    password.length >= MIN_PASSWORD_LENGTH &&
     passwordConfirm.trim() !== "" &&
+    password === passwordConfirm &&
     agreeTerms &&
-    agreePrivacy &&
-    password === passwordConfirm;
+    agreePrivacy;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+    setTouched({ email: true, birth: true, password: true, passwordConfirm: true });
     if (!isFormValid) return;
     navigate("/profile-register", {
       state: {
@@ -96,45 +118,76 @@ export default function Signup() {
             placeholder="이름을 입력해주세요"
           />
 
-          <Input
-            id="birth"
-            type="date"
-            label="생년월일"
-            required
-            value={birth}
-            onChange={(e) => setBirth(e.target.value)}
-          />
+          <div>
+            <Input
+              id="birth"
+              type="date"
+              label="생년월일"
+              required
+              value={birth}
+              onChange={(e) => {
+                setBirth(e.target.value);
+                setTouched((t) => ({ ...t, birth: true }));
+              }}
+            />
+            {(touched.birth && birthError) && (
+              <p className="mt-1 text-sm text-red-600">{birthError}</p>
+            )}
+          </div>
 
-          <Input
-            id="email"
-            type="email"
-            label="이메일"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일을 입력해주세요."
-          />
+          <div>
+            <Input
+              id="email"
+              type="email"
+              label="이메일"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setTouched((t) => ({ ...t, email: true }));
+              }}
+              placeholder="이메일을 입력해주세요."
+            />
+            {(touched.email && emailError) && (
+              <p className="mt-1 text-sm text-red-600">{emailError}</p>
+            )}
+          </div>
 
-          <Input
-            id="password"
-            type="password"
-            label="비밀번호"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호를 입력해주세요."
-          /> 
-          {/* 비밀번호는 8자리 이상 */}
+          <div>
+            <Input
+              id="password"
+              type="password"
+              label="비밀번호"
+              required
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setTouched((t) => ({ ...t, password: true }));
+              }}
+              placeholder="비밀번호를 8자 이상 입력해주세요."
+            />
+            {(touched.password && passwordError) && (
+              <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+            )}
+          </div>
 
-          <Input
-            id="passwordConfirm"
-            type="password"
-            label="비밀번호 확인"
-            required
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-            placeholder="비밀번호를 다시 입력해주세요."
-          />
+          <div>
+            <Input
+              id="passwordConfirm"
+              type="password"
+              label="비밀번호 확인"
+              required
+              value={passwordConfirm}
+              onChange={(e) => {
+                setPasswordConfirm(e.target.value);
+                setTouched((t) => ({ ...t, passwordConfirm: true }));
+              }}
+              placeholder="비밀번호를 다시 입력해주세요."
+            />
+            {(touched.passwordConfirm && passwordConfirmError) && (
+              <p className="mt-1 text-sm text-red-600">{passwordConfirmError}</p>
+            )}
+          </div>
 
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between gap-2">

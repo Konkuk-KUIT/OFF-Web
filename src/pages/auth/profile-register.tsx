@@ -12,7 +12,11 @@ const ROLE_TO_API: Record<string, string> = {
   마케터: "MAR",
 };
 
-const EXPERIENCE_TO_API: Record<string, string> = {
+// role: PM, DEV, DES, MAR 중 하나
+const ROLE_VALUES = ["PM", "DEV", "DES", "MAR"] as const;
+// projectCount: ZERO, ONCE, TWICE, THREE_TIMES, FOUR_TIMES, PLUS_FIVE 중 하나
+const PROJECT_COUNT_VALUES = ["ZERO", "ONCE", "TWICE", "THREE_TIMES", "FOUR_TIMES", "PLUS_FIVE"] as const;
+const EXPERIENCE_TO_API: Record<string, (typeof PROJECT_COUNT_VALUES)[number]> = {
   없음: "ZERO",
   "1회": "ONCE",
   "2회": "TWICE",
@@ -20,6 +24,11 @@ const EXPERIENCE_TO_API: Record<string, string> = {
   "4회": "FOUR_TIMES",
   "5회 이상": "PLUS_FIVE",
 };
+
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_NICKNAME_LENGTH = 50;
+const MAX_SELF_INTRODUCTION_LENGTH = 1000;
+const VALID_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ProfileRegister() {
   const location = useLocation();
@@ -47,8 +56,15 @@ export default function ProfileRegister() {
     setPortfolios((prev) => [...prev, { description: "", link: "" }]);
   };
 
+  const nicknameError = nickname.length > MAX_NICKNAME_LENGTH ? "닉네임은 50자 이내여야 합니다." : null;
+  const introductionError = introduction.length > MAX_SELF_INTRODUCTION_LENGTH ? "자기소개는 최대 1000자까지 작성 가능합니다." : null;
+
   const isFormValid =
-    nickname.trim() !== "" && role !== "" && projectCount !== "";
+    nickname.trim() !== "" &&
+    nickname.length <= MAX_NICKNAME_LENGTH &&
+    role !== "" &&
+    projectCount !== "" &&
+    introduction.length <= MAX_SELF_INTRODUCTION_LENGTH;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +74,25 @@ export default function ProfileRegister() {
       return;
     }
     if (!isFormValid || isSubmitting) return;
+    if (step1State.password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage("최소 8자 이상 입력해야 합니다.");
+      return;
+    }
+    if (!VALID_EMAIL_REGEX.test(step1State.email.trim())) {
+      setErrorMessage("유효한 이메일 주소를 입력해주세요.");
+      return;
+    }
+
+    const roleValue = ROLE_TO_API[role];
+    const projectCountValue = EXPERIENCE_TO_API[projectCount];
+    if (!roleValue || !ROLE_VALUES.includes(roleValue as (typeof ROLE_VALUES)[number])) {
+      setErrorMessage("직무는 PM, DEV, DES, MAR 중 하나만 선택해주세요.");
+      return;
+    }
+    if (!projectCountValue || !PROJECT_COUNT_VALUES.includes(projectCountValue)) {
+      setErrorMessage("경험 횟수는 ZERO, ONCE, TWICE, THREE_TIMES, FOUR_TIMES, PLUS_FIVE 중 하나만 가능합니다.");
+      return;
+    }
 
     const payload = {
       name: step1State.name,
@@ -65,8 +100,8 @@ export default function ProfileRegister() {
       email: step1State.email,
       password: step1State.password,
       nickname: nickname.trim(),
-      role: ROLE_TO_API[role] ?? role,
-      projectCount: EXPERIENCE_TO_API[projectCount] ?? "ZERO",
+      role: roleValue,
+      projectCount: projectCountValue,
       selfIntroduction: introduction.trim(),
       portfolioList: portfolios.map((p) => ({
         description: p.description,
@@ -119,15 +154,28 @@ export default function ProfileRegister() {
         </p>
 
         <form className="mt-6 space-y-6 pb-12" onSubmit={handleSubmit}>
-          <Input
-            id="nickname"
-            type="text"
-            label="닉네임"
-            required
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="프로젝트에 표시할 닉네임을 입력해주세요."
-          />
+          {step1State.password.length > 0 && step1State.password.length < MIN_PASSWORD_LENGTH && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              최소 8자 이상 입력해야 합니다. 회원가입 단계에서 비밀번호를 수정해주세요.
+            </div>
+          )}
+          <div>
+            <Input
+              id="nickname"
+              type="text"
+              label="닉네임"
+              required
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="프로젝트에 표시할 닉네임을 입력해주세요."
+              maxLength={MAX_NICKNAME_LENGTH}
+            />
+            {nicknameError ? (
+              <p className="mt-1 text-sm text-red-600">{nicknameError}</p>
+            ) : (
+              <p className="mt-1 text-xs text-zinc-500">닉네임은 50자 이내여야 합니다.</p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <label className="login-label block">
@@ -213,15 +261,23 @@ export default function ProfileRegister() {
             ))}
           </div>
 
-          <Input
-            id="introduction"
-            as="textarea"
-            label="내 소개 입력하기"
-            value={introduction}
-            onChange={(e) => setIntroduction(e.target.value)}
-            placeholder="크리에이터와 파트너에게 본인을 소개하세요."
-            rows={6}
-          />
+          <div>
+            <Input
+              id="introduction"
+              as="textarea"
+              label="내 소개 입력하기"
+              value={introduction}
+              onChange={(e) => setIntroduction(e.target.value)}
+              placeholder="크리에이터와 파트너에게 본인을 소개하세요."
+              rows={6}
+              maxLength={MAX_SELF_INTRODUCTION_LENGTH}
+            />
+            {introductionError ? (
+              <p className="mt-1 text-sm text-red-600">{introductionError}</p>
+            ) : (
+              <p className="mt-1 text-xs text-zinc-500">자기소개는 최대 1000자까지 작성 가능합니다.</p>
+            )}
+          </div>
 
           {errorMessage && (
             <p className="text-sm text-red-600">{errorMessage}</p>

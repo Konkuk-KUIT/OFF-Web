@@ -16,6 +16,7 @@ export default function Login() {
     return emailRegex.test(value);
   };
 
+  const emailInvalid = email.trim() !== "" && !isValidEmail(email);
   const isFormValid =
     email.trim() !== "" &&
     password.trim() !== "" &&
@@ -74,6 +75,9 @@ export default function Login() {
                 placeholder="이메일을 입력해주세요"
                 autoComplete="email"
               />
+              {emailInvalid && (
+                <p className="text-sm text-red-600">유효한 이메일 주소를 입력해주세요.</p>
+              )}
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="login-label block text-sm font-medium">
