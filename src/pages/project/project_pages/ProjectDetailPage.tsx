@@ -11,7 +11,6 @@ import {
   TaskTag,
   RightArrow,
   SubTitle,
-  ChatBubbleIcon,
 } from "../components/_ui";
 
 type Task = {
