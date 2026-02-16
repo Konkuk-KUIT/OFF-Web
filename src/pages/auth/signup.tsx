@@ -123,7 +123,8 @@ export default function Signup() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호를 입력해주세요."
-          />
+          /> 
+          {/* 비밀번호는 8자리 이상 */}
 
           <Input
             id="passwordConfirm"

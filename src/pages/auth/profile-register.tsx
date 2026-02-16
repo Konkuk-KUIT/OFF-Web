@@ -7,18 +7,18 @@ import type { SignupStep1State } from "./signup";
 
 const ROLE_TO_API: Record<string, string> = {
   기획자: "PM",
-  개발자: "DEVELOPER",
-  디자이너: "DESIGNER",
-  마케터: "MARKETER",
+  개발자: "DEV",
+  디자이너: "DES",
+  마케터: "MAR",
 };
 
 const EXPERIENCE_TO_API: Record<string, string> = {
   없음: "ZERO",
-  "1회": "ONE",
-  "2회": "TWO",
-  "3회": "THREE",
-  "4회": "FOUR",
-  "5회 이상": "FIVE_OR_MORE",
+  "1회": "ONCE",
+  "2회": "TWICE",
+  "3회": "THREE_TIMES",
+  "4회": "FOUR_TIMES",
+  "5회 이상": "PLUS_FIVE",
 };
 
 export default function ProfileRegister() {
