@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { loginWithMock, setAccessToken } from "../../api/auth";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { login as loginApi, setAccessToken } from "../../api/auth";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
 
   const isValidEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,13 +27,21 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      const data = await loginWithMock(email, password);
-      setAccessToken(data.accessToken);
-      navigate("/", { replace: true });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "로그인에 실패했습니다.";
-      setError(message);
+      const { data } = await loginApi({ email: email.trim(), password });
+      setAccessToken(data.data.accessToken);
+      navigate(from, { replace: true });
+    } catch (err: unknown) {
+      const res = (err as { response?: { data?: { message?: string }; status?: number } })
+        ?.response;
+      if (res?.status === 401) {
+        setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      } else if (res?.data && typeof res.data === "object" && "message" in res.data) {
+        setError((res.data as { message?: string }).message ?? "로그인에 실패했습니다.");
+      } else if (res?.status) {
+        setError(`요청이 실패했습니다. (${res.status})`);
+      } else {
+        setError("서버에 연결할 수 없습니다. 주소와 서버 실행 여부를 확인해주세요.");
+      }
     } finally {
       setLoading(false);
     }
@@ -100,11 +110,6 @@ export default function Login() {
             </div>
             <div className="border-t border-gray-200" />
           </div>
-
-          {/* Mock 안내 - 백엔드 연동 후 제거 가능 */}
-          <p className="text-xs text-gray-500 text-center">
-            테스트: test@test.com / 1234
-          </p>
 
           {/* Google Login Button - 추후 구글 연동 시 사용 */}
           <button
