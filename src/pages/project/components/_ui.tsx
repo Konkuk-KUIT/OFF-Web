@@ -55,7 +55,7 @@ export function GhostChip({
         "h-8 rounded-full px-4",
         "bg-[#F2F3F5]",
         "text-[13px] font-semibold text-black/70",
-        "border border-black/5 shadow-sm",
+        "border border-black/5",
       ].join(" ")}
     >
       {label}
@@ -74,7 +74,7 @@ export function DangerPill({
     <button
       type="button"
       onClick={onClick}
-      className="h-8 rounded-full bg-[#FF3B30] px-4 text-[13px] font-bold text-white shadow-sm"
+      className="h-8 rounded-full bg-[#FF3B30] px-4 text-[13px] font-bold text-white"
     >
       {label}
     </button>
@@ -94,7 +94,6 @@ export function BlueChip({
         "inline-flex h-8 items-center rounded-md px-4",
         "text-[13px] font-extrabold",
         active ? "bg-[#0B5CFF] text-white" : "bg-[#E9EEF7] text-black/70",
-        "shadow-[0_6px_14px_rgba(11,92,255,0.18)]",
       ].join(" ")}
     >
       {label}
@@ -125,7 +124,6 @@ export function BottomCTA({
           className={[
             "h-14 w-full rounded-full text-[16px] font-extrabold",
             cls,
-            "shadow-[0_10px_22px_rgba(11,92,255,0.25)]",
           ].join(" ")}
         >
           {label}
@@ -137,7 +135,7 @@ export function BottomCTA({
 
 export function LightCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#F2F3F5] px-5 py-5 shadow-[0_1px_0_rgba(0,0,0,0.06)]">
+    <div className="rounded-2xl bg-[#F2F3F5] px-5 py-5">
       {children}
     </div>
   );
@@ -145,7 +143,7 @@ export function LightCard({ children }: { children: React.ReactNode }) {
 
 export function DarkHeroCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-gradient-to-b from-[#0B0B0C] to-[#242426] text-white shadow-[0_14px_40px_rgba(0,0,0,0.18)]">
+    <div className="overflow-hidden rounded-2xl bg-gradient-to-b from-[#0B0B0C] to-[#242426] text-white">
       {children}
     </div>
   );
@@ -161,7 +159,7 @@ export function SliderBar({ percent }: { percent: number }) {
         style={{ width: `${p}%` }}
       />
       <div
-        className="absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-[0_10px_18px_rgba(0,0,0,0.25)]"
+        className="absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white"
         style={{ left: `calc(${p}% - 10px)` }}
       />
     </div>
