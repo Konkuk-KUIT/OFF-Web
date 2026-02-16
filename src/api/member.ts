@@ -33,6 +33,31 @@ export async function getMyProfile(): Promise<ProfileResponse> {
   return res.data.data;
 }
 
+/** ===== 내 프로필 수정 (PATCH /members/me) ===== */
+
+export type UpdateProfileRequest = {
+  nickname?: string;
+  profileImage?: string;
+  projectCount?: ProfileResponse["projectCount"];
+  portfolioList?: { description: string; link: string }[];
+  selfIntroduction?: string;
+};
+
+export type UpdateProfileResponse = {
+  memberId: number;
+  updatedAt: string; // date-time
+};
+
+export async function updateMyProfile(
+  payload: UpdateProfileRequest
+): Promise<UpdateProfileResponse> {
+  const res = await axiosInstance.patch<BaseResponse<UpdateProfileResponse>>(
+    "/members/me",
+    payload
+  );
+  if (!res.data.success) throw new Error(res.data.message || "내 프로필 수정 실패");
+  return res.data.data;
+}
 /** ===== 프론트(My 페이지)에서 쓰는 형태로 매핑 ===== */
 
 export type Portfolio = { desc: string; url: string };
