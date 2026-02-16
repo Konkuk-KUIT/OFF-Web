@@ -1,66 +1,26 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Page from "../../components/Page";
-import type { HomeProject, HomePartner } from "./types";
+import { getHome } from "../../api/home";
+import type { HomeProjectItem, HomePartnerItem } from "../../api/home";
 
 const homeBg = new URL("../../assets/home.svg", import.meta.url).href;
 const logoUrl = new URL("../../assets/logo.svg", import.meta.url).href;
 
-// TODO: API 연동 시 이 데이터를 API 호출 결과로 교체
-const MOCK_PROJECTS: HomeProject[] = [
-  {
-    id: "1",
-    title: "KUIT 6th Project",
-    type: "content",
-    typeLabel: "콘텐츠 제작",
-    description:
-      "프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개",
-    recruiting: true,
-    recruitSummary: "파트너 모집 중 (개발자 1명, 디자이너 2명)",
-  },
-  {
-    id: "2",
-    title: "KUIT 6th Project",
-    type: "service",
-    typeLabel: "서비스 제작",
-    description:
-      "프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개",
-    recruiting: true,
-    recruitSummary: "파트너 모집 중 (개발자 1명, 디자이너 2명)",
-  },
-  {
-    id: "3",
-    title: "KUIT 6th Project",
-    type: "app",
-    typeLabel: "앱 개발",
-    description:
-      "프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개",
-    recruiting: false,
-  },
-  {
-    id: "4",
-    title: "KUIT 6th Project",
-    type: "app",
-    typeLabel: "앱 개발",
-    description:
-      "프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개 프로젝트 1줄 소개",
-    recruiting: false,
-  },
-];
+const ROLE_LABEL: Record<string, string> = {
+  PM: "기획",
+  DEVELOPER: "개발자",
+  DESIGNER: "디자이너",
+  MARKETER: "마케터",
+};
 
-const MOCK_PARTNERS: HomePartner[] = [
-  {
-    id: "1",
-    role: "쿠잇 6기 서버 개발자",
-    description: "웹앱 서버 개발자입니다. 프로젝트 경험",
-    experience: "3회",
-  },
-  {
-    id: "2",
-    role: "쿠잇 6기 디자이너",
-    description: "UX/UI 특화 디자이너입니다 프로젝트 경험",
-    experience: "5회 이상",
-  },
-];
+function formatRecruitSummary(recruitList: { role: string; count: number }[]): string {
+  if (!recruitList.length) return "파트너 모집 중";
+  const parts = recruitList.map(
+    (r) => `${ROLE_LABEL[r.role] ?? r.role} ${r.count}명`
+  );
+  return `파트너 모집 중 (${parts.join(", ")})`;
+}
 
 const projectTypeTagStyle: React.CSSProperties = {
   display: "flex",
@@ -168,6 +128,70 @@ const aiBannerTextStyle: React.CSSProperties = {
 };
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateButton, setShowCreateButton] = useState(true);
+  const [projects, setProjects] = useState<HomeProjectItem[]>([]);
+  const [partners, setPartners] = useState<HomePartnerItem[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    getHome({ page: 1, size: 10 })
+      .then((res) => {
+        if (cancelled) return;
+        const { data } = res.data;
+        setShowCreateButton(data.showCreateButton);
+        setProjects(data.projects ?? []);
+        setPartners(data.partners ?? []);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message;
+        if (status === 401) {
+          setError("로그인이 필요합니다.");
+        } else {
+          setError(message ?? "데이터를 불러오지 못했습니다.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <Page className="space-y-6">
+        <div className="flex justify-center py-12 text-zinc-500">
+          로딩 중...
+        </div>
+      </Page>
+    );
+  }
+
+  if (error) {
+    return (
+      <Page className="space-y-6">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+          {error}
+        </div>
+        {error === "로그인이 필요합니다." && (
+          <Link
+            to="/login"
+            className="inline-block rounded-lg bg-zinc-800 px-4 py-2 text-white"
+          >
+            로그인하기
+          </Link>
+        )}
+      </Page>
+    );
+  }
+
   return (
     <Page className="space-y-6">
       {/* AI 프로젝트 관리 배너 */}
@@ -192,36 +216,45 @@ export default function Home() {
             <p style={aiBannerTextStyle}>프로젝트를 관리하세요</p>
           </div>
         </div>
-        <div className="relative z-10 mt-4 flex justify-center">
-          <Link
-            to="/project/create"
-            className="inline-flex h-[50px] min-w-0 shrink-0 items-center justify-center rounded-[50px] bg-[var(--gray-gray_900,#121212)] px-8 py-[14px] text-white whitespace-nowrap"
-            style={{
-              fontFamily: "Inter, sans-serif",
-            }}
-          >
-            프로젝트 생성하기
-          </Link>
-        </div>
+        {showCreateButton && (
+          <div className="relative z-10 mt-4 flex justify-center">
+            <Link
+              to="/project/create"
+              className="inline-flex h-[50px] min-w-0 shrink-0 items-center justify-center rounded-[50px] bg-[var(--gray-gray_900,#121212)] px-8 py-[14px] text-white whitespace-nowrap"
+              style={{
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              프로젝트 생성하기
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* 진행중인 프로젝트 */}
       <section className="space-y-4">
         <h2 style={sectionHeadingStyle}>진행중인 프로젝트</h2>
         <ul className="space-y-3">
-          {MOCK_PROJECTS.map((project) => (
-            <li key={project.id}>
+          {projects.map((project) => (
+            <li key={project.projectId}>
               <article className="rounded-2xl border border-zinc-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 style={projectTitleStyle}>{project.title}</h3>
-                  <span style={projectTypeTagStyle}>{project.typeLabel}</span>
+                  <h3 style={projectTitleStyle}>{project.name}</h3>
+                  <span style={projectTypeTagStyle}>
+                    D-{project.dday >= 0 ? project.dday : "마감"}
+                  </span>
                 </div>
                 <p className="mt-2" style={projectDescStyle}>
-                  {project.description}
+                  {project.creatorNickname} · 진행률 {project.progressPercent}%
                 </p>
-                {project.recruiting && project.recruitSummary && (
+                {project.recruiting && project.recruitList?.length > 0 && (
                   <p className="mt-2" style={projectRecruitStyle}>
-                    {project.recruitSummary}
+                    {formatRecruitSummary(project.recruitList)}
+                  </p>
+                )}
+                {project.recruiting && (!project.recruitList || project.recruitList.length === 0) && (
+                  <p className="mt-2" style={projectRecruitStyle}>
+                    파트너 모집 중
                   </p>
                 )}
                 {!project.recruiting && (
@@ -231,7 +264,7 @@ export default function Home() {
                 )}
                 <div className="mt-3 flex justify-end">
                   <Link
-                    to={`/project/${project.id}`}
+                    to={`/project/${project.projectId}`}
                     className="text-sm font-medium text-zinc-700"
                   >
                     자세히 보기 &gt;
@@ -241,25 +274,32 @@ export default function Home() {
             </li>
           ))}
         </ul>
+        {projects.length === 0 && (
+          <p className="py-4 text-center text-zinc-500">진행 중인 프로젝트가 없습니다.</p>
+        )}
       </section>
 
       {/* 파트너 둘러보기 */}
       <section className="space-y-4">
         <h2 style={sectionHeadingStyle}>파트너 둘러보기</h2>
         <ul className="space-y-3">
-          {MOCK_PARTNERS.map((partner) => (
-            <li key={partner.id}>
+          {partners.map((partner) => (
+            <li key={partner.memberId}>
               <article className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <h3 className="font-semibold text-zinc-900">{partner.role}</h3>
-                <p className="mt-2 text-sm text-zinc-600">{partner.description}</p>
+                <h3 className="font-semibold text-zinc-900">
+                  {partner.nickname} · {ROLE_LABEL[partner.role] ?? partner.role}
+                </h3>
+                <p className="mt-2 text-sm text-zinc-600">
+                  {partner.selfIntroduction || "소개가 없습니다."}
+                </p>
                 <div className="mt-3 flex justify-end">
                   <span className="text-sm text-zinc-500">
-                    {partner.experience}
+                    프로젝트 {partner.projectCount}회 · 포트폴리오 {partner.portfolioCount}개
                   </span>
                 </div>
                 <div className="mt-1 flex justify-end">
                   <Link
-                    to={`/partner/${partner.id}`}
+                    to={`/partner/${partner.memberId}`}
                     className="text-sm font-medium text-zinc-700"
                   >
                     자세히 보기 &gt;
@@ -269,6 +309,9 @@ export default function Home() {
             </li>
           ))}
         </ul>
+        {partners.length === 0 && (
+          <p className="py-4 text-center text-zinc-500">추천 파트너가 없습니다.</p>
+        )}
       </section>
     </Page>
   );
