@@ -14,8 +14,8 @@ export default function ProjectEditPage() {
   const { projectId } = useParams();
 
   // 피그마 화면 그대로 “표시용”
-  const [title, setTitle] = useState("어플 개발 프로젝트");
-  const [percent, setPercent] = useState(75);
+  const [title] = useState("어플 개발 프로젝트");
+  const [percent] = useState(75);
 
   const category = "프로덕트 개발";
   const partners = useMemo(() => ["마케팅", "디자인", "개발"], []);

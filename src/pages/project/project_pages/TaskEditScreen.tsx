@@ -3,7 +3,6 @@ import {
   Screen,
   LightCard,
   TaskTag,
-  RightArrow,
   DangerPill,
   BottomCTA,
 } from "../components/_ui";
