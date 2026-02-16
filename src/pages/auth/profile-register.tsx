@@ -1,25 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Input from "../../components/Input";
 import { ROLES, EXPERIENCES } from "../../constants/profile";
+import { signup } from "../../api/auth";
+import type { SignupStep1State } from "./signup";
+
+const ROLE_TO_API: Record<string, string> = {
+  기획자: "PM",
+  개발자: "DEVELOPER",
+  디자이너: "DESIGNER",
+  마케터: "MARKETER",
+};
+
+const EXPERIENCE_TO_API: Record<string, string> = {
+  없음: "ZERO",
+  "1회": "ONE",
+  "2회": "TWO",
+  "3회": "THREE",
+  "4회": "FOUR",
+  "5회 이상": "FIVE_OR_MORE",
+};
 
 export default function ProfileRegister() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const step1State = location.state as SignupStep1State | undefined;
+
   const [nickname, setNickname] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [experience, setExperience] = useState("");
+  const [role, setRole] = useState("");
+  const [projectCount, setProjectCount] = useState("");
   const [portfolios, setPortfolios] = useState([
     { description: "", link: "" },
     { description: "", link: "" },
   ]);
   const [introduction, setIntroduction] = useState("");
-
-  const toggleRole = (role: string) => {
-    setSelectedRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-    );
-  };
-
-  const roles = [...ROLES];
-  const experiences = [...EXPERIENCES];
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updatePortfolio = (index: number, field: "description" | "link", value: string) => {
     setPortfolios((prev) =>
@@ -31,30 +47,74 @@ export default function ProfileRegister() {
     setPortfolios((prev) => [...prev, { description: "", link: "" }]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isFormValid =
+    nickname.trim() !== "" && role !== "" && projectCount !== "";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 프로필 등록 로직 구현
-    console.log("프로필 등록:", {
-      nickname,
-      selectedRoles,
-      experience,
-      portfolios,
-      introduction,
-    });
+    setErrorMessage("");
+    if (!step1State?.email) {
+      navigate("/signup", { replace: true });
+      return;
+    }
+    if (!isFormValid || isSubmitting) return;
+
+    const payload = {
+      name: step1State.name,
+      birth: step1State.birth,
+      email: step1State.email,
+      password: step1State.password,
+      nickname: nickname.trim(),
+      role: ROLE_TO_API[role] ?? role,
+      projectCount: EXPERIENCE_TO_API[projectCount] ?? "ZERO",
+      selfIntroduction: introduction.trim(),
+      portfolioList: portfolios.map((p) => ({
+        description: p.description,
+        link: p.link,
+      })),
+    };
+
+    setIsSubmitting(true);
+    try {
+      await signup(payload);
+      navigate("/login", { state: { message: "회원가입이 완료되었습니다." } });
+    } catch (err: unknown) {
+      const res = (err as { response?: { data?: { message?: string }; status?: number } })
+        ?.response;
+      if (res?.status === 409) {
+        setErrorMessage("이미 사용 중인 이메일입니다.");
+      } else {
+        setErrorMessage(
+          (res?.data as { message?: string })?.message ?? "회원가입에 실패했습니다."
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  useEffect(() => {
+    if (!step1State?.email) {
+      navigate("/signup", { replace: true });
+    }
+  }, [step1State?.email, navigate]);
+
+  if (!step1State?.email) {
+    return null;
+  }
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-screen-sm flex-col bg-white">
-      {/* Header */}
-      <header className="flex shrink-0 items-center gap-4 border-b border-gray-200 px-4 py-4 bg-white">
-        {/* TODO: 뒤로가기 버튼 컴포넌트 추가 */}
+      <header className="flex shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-4 py-4">
         <div className="w-6" />
         <h1 className="login-title flex-1 text-center">프로필 등록</h1>
         <div className="w-6" />
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 pb-24">
-        <p className="login-subtitle text-left text-sm mt-4">정보를 입력하고 OFF에 가입하세요.</p>
+        <p className="login-subtitle mt-4 text-left text-sm">
+          정보를 입력하고 OFF에 가입하세요.
+        </p>
 
         <form className="mt-6 space-y-6 pb-12" onSubmit={handleSubmit}>
           <Input
@@ -67,43 +127,39 @@ export default function ProfileRegister() {
             placeholder="프로젝트에 표시할 닉네임을 입력해주세요."
           />
 
-          {/* 프로젝트 희망 직무 */}
           <div className="space-y-2">
             <label className="login-label block">
-              프로젝트 희망 직무<span className="profile-multiple-select">(복수 선택 가능)</span><span className="text-red-500">*</span>
+              프로젝트 희망 직무<span className="text-red-500">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
-              {roles.map((role) => (
+              {ROLES.map((r) => (
                 <button
-                  key={role}
+                  key={r}
                   type="button"
-                  onClick={() => toggleRole(role)}
+                  onClick={() => setRole(r)}
                   className={`profile-button rounded-lg px-4 py-2 transition-colors ${
-                    selectedRoles.includes(role)
-                      ? "bg-blue-600 selected"
-                      : "bg-gray-100 hover:bg-gray-200"
+                    role === r ? "bg-blue-600 text-white" : "bg-gray-100 hover:bg-gray-200"
                   }`}
                 >
-                  {role}
+                  {r}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 프로젝트 경험 횟수 */}
           <div className="space-y-2">
             <label className="login-label block">
               프로젝트 경험 횟수<span className="text-red-500">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
-              {experiences.map((exp) => (
+              {EXPERIENCES.map((exp) => (
                 <button
                   key={exp}
                   type="button"
-                  onClick={() => setExperience(exp)}
+                  onClick={() => setProjectCount(exp)}
                   className={`profile-button rounded-lg px-4 py-2 transition-colors ${
-                    experience === exp
-                      ? "bg-blue-600 selected"
+                    projectCount === exp
+                      ? "bg-blue-600 text-white"
                       : "bg-gray-100 hover:bg-gray-200"
                   }`}
                 >
@@ -113,12 +169,9 @@ export default function ProfileRegister() {
             </div>
           </div>
 
-          {/* 포트폴리오 입력 */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="login-label">
-                포트폴리오 입력
-              </label>
+              <label className="login-label">포트폴리오 입력</label>
               <button
                 type="button"
                 onClick={addPortfolio}
@@ -129,13 +182,17 @@ export default function ProfileRegister() {
             </div>
             {portfolios.map((portfolio, index) => (
               <div key={index} className="space-y-3">
-                <span className="block text-sm font-medium text-gray-900">{index + 1}</span>
+                <span className="block text-sm font-medium text-gray-900">
+                  {index + 1}
+                </span>
                 <div className="space-y-3">
                   <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <input
                       type="text"
                       value={portfolio.description}
-                      onChange={(e) => updatePortfolio(index, "description", e.target.value)}
+                      onChange={(e) =>
+                        updatePortfolio(index, "description", e.target.value)
+                      }
                       className="profile-portfolio-input login-input w-full px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:outline-none"
                       placeholder="포트폴리오에 대한 설명을 간략히 입력하세요."
                     />
@@ -164,12 +221,17 @@ export default function ProfileRegister() {
             rows={6}
           />
 
+          {errorMessage && (
+            <p className="text-sm text-red-600">{errorMessage}</p>
+          )}
+
           <div className="mt-6">
             <button
               type="submit"
-              className="auth-primary-button button-primary-text"
+              disabled={!isFormValid || isSubmitting}
+              className="auth-primary-button button-primary-text disabled:opacity-50"
             >
-              저장하기
+              {isSubmitting ? "처리 중..." : "저장하기"}
             </button>
           </div>
         </form>

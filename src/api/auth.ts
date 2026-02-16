@@ -1,5 +1,35 @@
 import axiosInstance from "./axiosInstance";
 
+/** 회원가입 요청 Body (API 명세) */
+export type SignupPayload = {
+  name: string;
+  birth: string;
+  email: string;
+  password: string;
+  profileImage?: string;
+  nickname: string;
+  role: string;
+  projectCount: string;
+  selfIntroduction: string;
+  portfolioList: { description: string; link: string }[];
+};
+
+/** 회원가입 성공 응답 */
+export type SignupResponse = {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    memberId: number;
+    email: string;
+    createdAt: string;
+  };
+};
+
+export const signup = (data: SignupPayload) => {
+  return axiosInstance.post<SignupResponse>("/auth/signup", data);
+};
+
 /** 로그인 요청 (POST /auth/login) - 백엔드 연동 시 사용 */
 export type LoginPayload = {
   email: string;
