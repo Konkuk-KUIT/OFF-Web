@@ -17,8 +17,6 @@ import Invitations from "../pages/my/myInvitations";
 import Projects from "../pages/my/myProjects";
 
 import Notice from "../pages/notice/notice";
-
-// ✅ 프로젝트 라우트(부모 + 자식들)
 import Project from "../pages/project/project";
 import ProjectCreate from "../pages/project/projectCreate";
 import PartnerRecruit from "../pages/project/partnerRecruit";
@@ -38,55 +36,62 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route element={<AppFrame />}>
-          {/* 공개 */}
+          {/* 공개 라우트 (Auth) */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile-register" element={<ProfileRegister />} />
-          <Route path="/account" element={<Account />} />
 
-          {/* 보호 */}
+          {/* 보호 라우트 (Protected) */}
           <Route element={<ProtectedRoute />}>
+            {/* 메인 */}
             <Route path="/" element={<Home />} />
-            {/* chat.tsx 안에서 /chat, /chat/:id를 처리 */}
-            <Route path="/chat/*" element={<Chat />} />
-            <Route path="/project" element={<Project />} />
-            <Route path="/project/create" element={<ProjectCreate />} />
-            <Route path="/project/partner-recruit" element={<PartnerRecruit />} />
-            <Route path="/partner/:id" element={<PartnerDetail />} />
-            <Route path="/partner/supported" element={<SupportedPartner />} />
-            <Route path="/partner/supported/confirm" element={<SupportedPartnerConfirm />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/notice" element={<Notice />} />
-            <Route path="/my" element={<My />} />
-            <Route path="/my/edit" element={<MyEdit />} />
             <Route path="/home/profile-edit" element={<ProfileEdit />} />
-            <Route path="my/payments" element={<Payments />} />
-            <Route path="my/invitations" element={<Invitations />} />
-            <Route path="my/projects" element={<Projects />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/project" element={<Project />}>
-              <Route index element={<Navigate to="1" replace />} />
 
-              <Route path=":projectId" element={<ProjectDetailPage />} />
-              <Route path=":projectId/edit" element={<ProjectEditScreen />} />
-
-              <Route path=":projectId/tasks/new" element={<TaskCreateScreen />} />
-              <Route path=":projectId/tasks/:taskId/edit" element={<TaskEditScreen />} />
-              <Route path=":projectId/tasks/:taskId/assign" element={<TaskAssignPage />} />
-
-              <Route path=":projectId/close" element={<ProjectCloseScreen />} />
-            </Route>
-
+            {/* 마이페이지 */}
             <Route path="/my" element={<My />} />
             <Route path="/my/edit" element={<MyEdit />} />
             <Route path="/my/payments" element={<Payments />} />
             <Route path="/my/invitations" element={<Invitations />} />
             <Route path="/my/projects" element={<Projects />} />
-            <Route path="/notice" element={<Notice />} />
+
+            {/* 채팅 (Chat.tsx 내부에서 /chat, /chat/:id 처리) */}
+            <Route path="/chat/*" element={<Chat />} />
+
+            {/* 파트너 */}
+            <Route path="/partner/:id" element={<PartnerDetail />} />
+            <Route path="/partner/supported" element={<SupportedPartner />} />
+            <Route path="/partner/supported/confirm" element={<SupportedPartnerConfirm />} />
+
+            {/* 프로젝트 생성 및 모집 */}
+            <Route path="/project/create" element={<ProjectCreate />} />
+            <Route path="/project/partner-recruit" element={<PartnerRecruit />} />
+
+            {/* 프로젝트 상세 */}
+            <Route path="/project" element={<Project />}>
+              <Route index element={<ProjectIndexRedirect />} />
+
+              <Route path=":projectId" element={<ProjectDetailPage />} />
+              <Route path=":projectId/edit" element={<ProjectEditScreen />} />
+              <Route path=":projectId/close" element={<ProjectCloseScreen />} />
+
+              {/* 태스크 관련 */}
+              <Route path=":projectId/tasks/new" element={<TaskCreateScreen />} />
+              <Route path=":projectId/tasks/:taskId/edit" element={<TaskEditScreen />} />
+              <Route path=":projectId/tasks/:taskId/assign" element={<TaskAssignPage />} />
+            </Route>
           </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </BrowserRouter >
   );
+}
+
+function ProjectIndexRedirect() {
+  const lastId = localStorage.getItem("lastViewedProjectId");
+  // 마지막으로 본 프로젝트가 있으면 거기로, 없으면 홈으로
+  return <Navigate to={lastId ? `/project/${lastId}` : "/"} replace />;
 }

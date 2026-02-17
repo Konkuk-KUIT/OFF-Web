@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Screen,
@@ -23,6 +23,12 @@ type Task = {
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
+
+  useEffect(() => {
+    if (projectId) {
+      localStorage.setItem("lastViewedProjectId", projectId);
+    }
+  }, [projectId]);
 
   const project = {
     org: "OFF the Limit",
@@ -134,10 +140,10 @@ export default function ProjectDetailPage() {
       <SubTitle
         left="TASK 진행상황"
         right={
-            <GhostChip
-              label="추가"
-              onClick={() => navigate(`/project/${projectId}/tasks/new`)}
-            />
+          <GhostChip
+            label="추가"
+            onClick={() => navigate(`/project/${projectId}/tasks/new`)}
+          />
         }
       />
 
