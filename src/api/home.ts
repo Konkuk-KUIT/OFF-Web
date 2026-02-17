@@ -43,6 +43,6 @@ export type HomeQuery = {
 };
 
 export const getHome = (params: HomeQuery = {}) => {
-  const { page = 1, size = 10 } = params;
+  const { page = 0, size = 10 } = params;
   return axiosInstance.get<HomeResponse>("/home", { params: { page, size } });
 };
