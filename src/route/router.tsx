@@ -31,7 +31,15 @@ import TaskEditScreen from "../pages/project/project_pages/TaskEditScreen";
 import TaskAssignPage from "../pages/project/project_pages/TaskAssignPage";
 import ProjectCloseScreen from "../pages/project/project_pages/ProjectClosePage";
 
+
+function ProjectIndexRedirect() {
+  const lastId = localStorage.getItem("lastViewedProjectId");
+  // 마지막으로 본 프로젝트가 있으면 거기로, 없으면 홈으로
+  return <Navigate to={lastId ? `/project/${lastId}` : "/"} replace />;
+}
+
 export default function AppRouter() {
+
   return (
     <BrowserRouter>
       <Routes>
@@ -90,8 +98,4 @@ export default function AppRouter() {
   );
 }
 
-function ProjectIndexRedirect() {
-  const lastId = localStorage.getItem("lastViewedProjectId");
-  // 마지막으로 본 프로젝트가 있으면 거기로, 없으면 홈으로
-  return <Navigate to={lastId ? `/project/${lastId}` : "/"} replace />;
-}
+
