@@ -57,7 +57,7 @@ export default function Payments() {
           ))}
           {items.length === 0 && (
             <div className="py-10 text-center text-gray-500 text-sm">
-              참여한 프로젝트 내역이 없습니다.
+              요청 내역이 없습니다.
             </div>
           )}
         </div>
