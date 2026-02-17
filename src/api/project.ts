@@ -196,7 +196,7 @@ export type RecruitPartnerPayload = {
     }
 };
 
-export async function recruitPartner(projectId: number, payload: RecruitPartnerPayload): Promise<void> {
+export async function recruitPartner(_projectId: number, payload: RecruitPartnerPayload): Promise<void> {
     console.warn("recruitPartner API not found in spec. Payload:", payload);
     // throw new Error("Partner Recruitment API is not available in the current specification.");
     // For now, we simulate success or fail?
@@ -256,14 +256,15 @@ export type TaskUpdateRequest = {
     toDoList: { id: number; content: string }[]; // Spec says ToDoItem { id, content }
 };
 
-export async function updateTask(projectId: number, taskId: number, payload: TaskUpdateRequest): Promise<void> {
+export async function updateTask(_projectId: number, taskId: number, payload: TaskUpdateRequest): Promise<void> {
     // URL is /tasks/{taskId}, NOT /projects/.../tasks/...
+    // projectId is unused but kept for consistency with other APIs if needed later or by caller convention
     const res = await axiosInstance.patch<BaseResponse<void>>(`/tasks/${taskId}`, payload);
     if (!res.data.success) throw new Error(res.data.message || "Task 수정 실패");
 }
 
 /** ===== TASK 삭제 (DELETE /tasks/{taskId}) ===== */
-export async function deleteTask(projectId: number, taskId: number): Promise<void> {
+export async function deleteTask(_projectId: number, taskId: number): Promise<void> {
     const res = await axiosInstance.delete<BaseResponse<void>>(`/tasks/${taskId}`);
     if (!res.data.success) throw new Error(res.data.message || "Task 삭제 실패");
 }
@@ -285,7 +286,7 @@ export async function getProjectMembers(projectId: number): Promise<MemberSummar
 // Or `createTask` takes `projectMemberId`.
 // I will implement helper `assignTask` that calls `updateTask`.
 
-export async function assignTask(projectId: number, taskId: number, partnerId: number): Promise<void> {
+export async function assignTask(_projectId: number, _taskId: number, _partnerId: number): Promise<void> {
     // We need current task details to preserve other fields?
     // This is getting complex. UI should handle object construction.
     // For now, I'll leave it as a TODO or helper that fetches then updates.
