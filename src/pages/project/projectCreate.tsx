@@ -19,8 +19,6 @@ const PARTNER_ROLES = [
   { id: "editor", label: "영상 편집자", roleId: null },
 ] as const;
 
-const ROLE_IDS = ["PM", "DEV", "DES", "MAR"] as const;
-
 const tagBaseClass =
   "inline-flex h-8 items-center justify-center rounded border px-2.5 py-1 text-sm font-medium transition-colors";
 const tagSelectedClass =
@@ -64,8 +62,8 @@ export default function ProjectCreate() {
     "developer",
     "designer",
   ]);
-  const [developerCount, setDeveloperCount] = useState(3);
-  const [designerCount, setDesignerCount] = useState(2);
+  const [developerCount] = useState(3);
+  const [designerCount] = useState(2);
   const [requirements, setRequirements] = useState("");
   const [endDate, setEndDate] = useState("");
   const [totalEstimate, setTotalEstimate] = useState<number>(0);
