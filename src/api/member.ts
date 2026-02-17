@@ -17,12 +17,12 @@ export type ProfileResponse = {
   projectName: string;
   role: "PM" | "DEV" | "DES" | "MAR";
   projectCount:
-    | "ZERO"
-    | "ONCE"
-    | "TWICE"
-    | "THREE_TIMES"
-    | "FOUR_TIMES"
-    | "PLUS_FIVE";
+  | "ZERO"
+  | "ONCE"
+  | "TWICE"
+  | "THREE_TIMES"
+  | "FOUR_TIMES"
+  | "PLUS_FIVE";
   portfolioList: { description: string; link: string }[];
   selfIntroduction: string;
 };
@@ -109,4 +109,26 @@ export function mapToMyPageProfile(api: ProfileResponse): MyPageProfile {
     bio: api.selfIntroduction ?? "",
     project: api.projectName ?? "",
   };
+}
+
+/** ===== 참여한 프로젝트 조회 (GET /members/me/projects) ===== */
+
+export type ProjectItem = {
+  id: number;
+  name: string;
+  amount: number;
+  paidAt: string; // date-time
+  createdAt: string; // date-time
+};
+
+export type MyProjectsResponse = {
+  projectList: ProjectItem[];
+};
+
+export async function getMyProjects(): Promise<MyProjectsResponse> {
+  const res = await axiosInstance.get<BaseResponse<MyProjectsResponse>>(
+    "/members/me/projects"
+  );
+  if (!res.data.success) throw new Error(res.data.message || "참여한 프로젝트 조회 실패");
+  return res.data.data;
 }
