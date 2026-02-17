@@ -1,26 +1,59 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Screen, BottomCTA } from "../components/_ui";
-
-type Partner = { id: number; name: string; role: "dev" | "design" };
+import { getProjectDetail, updateTask, type MemberSummary, type TaskSummary } from "../../../api/project";
 
 export default function TaskAssignPage() {
   const navigate = useNavigate();
   const { projectId, taskId } = useParams();
+  const [members, setMembers] = useState<MemberSummary[]>([]);
+  const [task, setTask] = useState<TaskSummary | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const partners = useMemo<Partner[]>(
-    () => [
-      { id: 1, name: "파트너 개발자1", role: "dev" },
-      { id: 2, name: "파트너 디자이너1", role: "design" },
-      { id: 3, name: "파트너 디자이너2", role: "design" },
-      { id: 4, name: "파트너 디자이너3", role: "design" },
-    ],
-    []
-  );
+  useEffect(() => {
+    if (projectId && taskId && !isNaN(Number(taskId))) {
+      setLoading(true);
+      getProjectDetail(Number(projectId))
+        .then((data) => {
+          setMembers(data.members);
+          const foundTask = data.tasks.find(t => t.taskId === Number(taskId));
+          if (foundTask) {
+            setTask(foundTask);
+            // If there is an assignee, we could pre-select?
+            // But we don't have assignee ID directly in TaskSummary, only name.
+            // We can try to find it.
+            const assignee = data.members.find(m => m.nickname === foundTask.assigneeName);
+            if (assignee) setSelected(assignee.memberId);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [projectId, taskId]);
 
-  const devs = partners.filter((p) => p.role === "dev");
-  const designers = partners.filter((p) => p.role === "design");
-  const [selected, setSelected] = useState<number>(1);
+  const devs = useMemo(() => members.filter((p) => p.role === "DEV"), [members]);
+  const designers = useMemo(() => members.filter((p) => p.role === "DES"), [members]); // Role enum: PM, DEV, DES, MAR
+
+  const handleAssign = async () => {
+    if (!projectId || !taskId || !selected || !task) return;
+    try {
+      // We must provide name, description, and projectMemberId
+      await updateTask(Number(projectId), Number(taskId), {
+        name: task.name,
+        description: task.description,
+        projectMemberId: selected,
+        toDoList: task.toDoList.map(t => ({ id: t.toDoId, content: t.content }))
+      });
+      alert("배정되었습니다.");
+      navigate(`/project/${projectId}/tasks/${taskId}/edit`);
+    } catch (e: any) {
+      console.error(e);
+      alert("배정 실패");
+    }
+  };
 
   const Row = ({
     name,
@@ -51,6 +84,9 @@ export default function TaskAssignPage() {
     </button>
   );
 
+
+  if (loading) return <Screen><div>Loading...</div></Screen>;
+
   return (
     <Screen>
       <div className="mt-2 text-center text-[18px] font-extrabold text-black">
@@ -59,33 +95,33 @@ export default function TaskAssignPage() {
 
       <div className="mt-6 text-[18px] font-extrabold text-black">개발자</div>
       <div className="mt-3 space-y-2">
-        {devs.map((p) => (
-          <div key={p.id} className="overflow-hidden rounded-2xl">
+        {devs.length > 0 ? devs.map((p) => (
+          <div key={p.memberId} className="overflow-hidden rounded-2xl">
             <Row
-              name={p.name}
-              active={selected === p.id}
-              onClick={() => setSelected(p.id)}
+              name={p.nickname}
+              active={selected === p.memberId}
+              onClick={() => setSelected(p.memberId)}
             />
           </div>
-        ))}
+        )) : <div className="text-gray-400">등록된 개발자가 없습니다.</div>}
       </div>
 
       <div className="mt-6 text-[18px] font-extrabold text-black">디자이너</div>
       <div className="mt-3 space-y-2">
-        {designers.map((p) => (
-          <div key={p.id} className="overflow-hidden rounded-2xl">
+        {designers.length > 0 ? designers.map((p) => (
+          <div key={p.memberId} className="overflow-hidden rounded-2xl">
             <Row
-              name={p.name}
-              active={selected === p.id}
-              onClick={() => setSelected(p.id)}
+              name={p.nickname}
+              active={selected === p.memberId}
+              onClick={() => setSelected(p.memberId)}
             />
           </div>
-        ))}
+        )) : <div className="text-gray-400">등록된 디자이너가 없습니다.</div>}
       </div>
 
       <BottomCTA
         label="배정하기"
-        onClick={() => navigate(`/project/${projectId}/tasks/${taskId}/edit`)}
+        onClick={handleAssign}
       />
     </Screen>
   );

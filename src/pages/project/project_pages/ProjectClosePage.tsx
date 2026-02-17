@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Screen,
@@ -10,61 +10,45 @@ import {
   RightArrow,
   BottomCTA,
 } from "../components/_ui";
-
-type Task = {
-  id: number;
-  title: string;
-  partnerLabel: string;
-  partnerDesc: string;
-  percent: number;
-};
+import { getProjectDetail, closeProject, type ProjectDetail } from "../../../api/project";
 
 export default function ProjectClosePage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const project = {
-    title: "어플 개발",
-    dday: "D-0",
-    startDate: "2025.02.19",
-    category: "앱 개발",
-    partners: ["마케팅", "디자인", "개발"],
-    desc: "OFF the Limit 한계를 ‘OFF’하고 오직 실행에만 집중하는 올인원 프로젝트 플랫폼",
-    statusText: "모집 마감",
-    percent: 100,
+  useEffect(() => {
+    if (projectId) {
+      setLoading(true);
+      getProjectDetail(Number(projectId))
+        .then(setProject)
+        .catch((e) => console.error(e))
+        .finally(() => setLoading(false));
+    }
+  }, [projectId]);
+
+  const handleClose = async () => {
+    if (!projectId) return;
+    try {
+      if (!window.confirm("정말로 프로젝트를 종료하시겠습니까?")) return;
+
+      await closeProject(Number(projectId));
+      alert("프로젝트가 종료되었습니다.");
+      navigate(`/project/${projectId}`);
+    } catch (e: any) {
+      console.error(e);
+      alert("프로젝트 종료에 실패했습니다.");
+    }
   };
 
-  const tasks = useMemo<Task[]>(
-    () => [
-      {
-        id: 1,
-        title: "앱 경쟁사 분석",
-        partnerLabel: "경쟁사 분석",
-        partnerDesc: "1차 데스크 리서치, 2차 데스크 리서치",
-        percent: 100,
-      },
-      {
-        id: 2,
-        title: "개발 환경 셋업",
-        partnerLabel: "프레임워크 셋업(Next.js/React 등)",
-        partnerDesc: "인프라 및 CI/CD 파이프라인 구축",
-        percent: 100,
-      },
-      {
-        id: 3,
-        title: "개발 환경 셋업",
-        partnerLabel: "프레임워크 셋업(Next.js/React 등)",
-        partnerDesc: "인프라 및 CI/CD 파이프라인 구축",
-        percent: 100,
-      },
-    ],
-    []
-  );
+  if (loading) return <Screen><div>Loading...</div></Screen>;
+  if (!project) return <Screen><div>Project not found</div></Screen>;
 
   return (
     <Screen>
       <div className="mt-1 text-[18px] font-extrabold text-black">내 프로젝트</div>
-      <div className="mt-2 text-[18px] font-extrabold text-black">{project.title}</div>
+      <div className="mt-2 text-[18px] font-extrabold text-black">{project.name}</div>
 
       <div className="mt-3">
         <DarkHeroCard>
@@ -79,26 +63,29 @@ export default function ProjectClosePage() {
               {project.startDate}
             </div>
 
-            <SliderBar percent={project.percent} />
+            <SliderBar percent={project.progressPercent} />
 
             <div className="mt-6 grid grid-cols-[72px_1fr] gap-y-3 text-[13px]">
+              {/* Category removed */}
+              {/*
               <div className="text-white/70 font-semibold">카테고리</div>
               <div className="flex justify-end">
                 <BlueChip label={project.category} />
               </div>
+              */}
 
               <div className="text-white/70 font-semibold">파트너</div>
-              <div className="flex justify-end gap-2">
-                {project.partners.map((p) => (
-                  <BlueChip key={p} label={p} />
+              <div className="flex justify-end gap-2 flex-wrap">
+                {project.members.map((p, idx) => (
+                  <BlueChip key={`${p.memberId}-${idx}`} label={p.nickname} />
                 ))}
               </div>
             </div>
           </div>
 
           <div className="bg-[#F2F3F5] px-4 py-3 text-[13px] font-semibold text-black/80">
-            {project.desc}
-            <div className="mt-2 text-black/50">{project.statusText}</div>
+            {project.introduction}
+            {/* <div className="mt-2 text-black/50">{project.statusText}</div> */}
           </div>
         </DarkHeroCard>
       </div>
@@ -106,27 +93,27 @@ export default function ProjectClosePage() {
       <div className="mt-6 text-[18px] font-extrabold text-black">TASK 진행상황</div>
 
       <div className="mt-3 space-y-3">
-        {tasks.map((t) => (
-          <LightCard key={t.id}>
+        {project.tasks?.map((t, idx) => (
+          <LightCard key={`${t.taskId}-${idx}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <TaskTag text={`task ${t.id}`} />
-                <div className="text-[16px] font-extrabold text-black">{t.title}</div>
+                <TaskTag text={`task ${t.taskId}`} />
+                <div className="text-[16px] font-extrabold text-black">{t.name}</div>
               </div>
-              <div className="text-[18px] font-extrabold text-black">{t.percent}%</div>
+              <div className="text-[18px] font-extrabold text-black">{t.progressPercent}%</div>
             </div>
 
             <div className="mt-2 text-[13px] font-semibold text-black/60">
-              {t.partnerLabel}
+              담당 파트너:
             </div>
             <div className="text-[13px] font-semibold text-black/60">
-              {t.partnerDesc}
+              {t.assigneeName || "미배정"}
             </div>
 
             <div className="mt-3 flex justify-end">
               <button
                 type="button"
-                onClick={() => navigate(`/project/${projectId}/tasks/${t.id}/edit`)}
+                onClick={() => navigate(`/project/${projectId}/tasks/${t.taskId}/edit`)}
                 className="flex items-center gap-2 text-[13px] font-semibold text-black/50"
               >
                 자세히 보기 <RightArrow />
@@ -138,10 +125,7 @@ export default function ProjectClosePage() {
 
       <BottomCTA
         label="프로젝트 종료 확인"
-        onClick={() => {
-          // TODO: 종료 API 붙이면 됨
-          navigate(`/project/${projectId}`);
-        }}
+        onClick={handleClose}
       />
     </Screen>
   );

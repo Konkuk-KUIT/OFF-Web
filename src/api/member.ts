@@ -1,12 +1,6 @@
 import axiosInstance from "./axiosInstance";
+import type { BaseResponse } from "./types";
 
-/** 공통 BaseResponse */
-export type BaseResponse<T> = {
-  success: boolean;
-  code: number;
-  message: string;
-  data: T;
-};
 
 /** Swagger: components/schemas/ProfileResponse */
 export type ProfileResponse = {
