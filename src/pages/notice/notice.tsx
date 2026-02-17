@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   getNotifications,
   markNotificationAsRead,
+  parseInvitationIdFromRedirectUrl,
+  isProjectInvitationType,
 } from "../../api/notifications";
 import type { NotificationItem } from "../../api/notifications";
 
@@ -51,7 +53,14 @@ export default function Notice() {
           if (isExternal) {
             window.open(notice.redirectUrl, "_blank", "noopener,noreferrer");
           } else {
-            navigate(notice.redirectUrl);
+            const invitationId =
+              isProjectInvitationType(notice.type) &&
+              parseInvitationIdFromRedirectUrl(notice.redirectUrl);
+            if (invitationId != null) {
+              navigate("/partner/supported", { state: { invitationId } });
+            } else {
+              navigate(notice.redirectUrl);
+            }
           }
         })
         .catch(() => {
@@ -59,7 +68,14 @@ export default function Notice() {
           if (isExternal) {
             window.open(notice.redirectUrl, "_blank", "noopener,noreferrer");
           } else {
-            navigate(notice.redirectUrl);
+            const invitationId =
+              isProjectInvitationType(notice.type) &&
+              parseInvitationIdFromRedirectUrl(notice.redirectUrl);
+            if (invitationId != null) {
+              navigate("/partner/supported", { state: { invitationId } });
+            } else {
+              navigate(notice.redirectUrl);
+            }
           }
         });
     },

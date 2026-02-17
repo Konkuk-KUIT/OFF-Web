@@ -185,6 +185,21 @@ export default function ProjectDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 지원하기 버튼 - 하단 고정, 풀폭 파란 pill */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
+        <button
+          type="button"
+          onClick={() =>
+            navigate("/home/profile-edit", {
+              state: { projectId: projectId ? Number(projectId) : undefined },
+            })
+          }
+          className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"
+        >
+          지원하기
+        </button>
+      </div>
     </Screen>
   );
 }

@@ -59,3 +59,23 @@ export const markNotificationAsRead = (notificationId: number) => {
     `/notifications/${notificationId}/read`
   );
 };
+
+/**
+ * 제안 관련 알림의 redirectUrl에서 invitationId 추출
+ * 예: "/projects/invitations/123" → 123
+ * type 필드로 '프로젝트 제안' 여부 확인 후 이 ID를 사용
+ */
+export function parseInvitationIdFromRedirectUrl(redirectUrl: string): number | null {
+  if (!redirectUrl || typeof redirectUrl !== "string") return null;
+  const match = redirectUrl.match(/\/(?:invitations|projects\/invitations)\/(\d+)$/);
+  if (!match) return null;
+  const id = parseInt(match[1], 10);
+  return Number.isNaN(id) ? null : id;
+}
+
+/** 프로젝트 제안 알림인지 type으로 판단 (백엔드에서 내려주는 값에 맞게 조정) */
+export function isProjectInvitationType(type: string): boolean {
+  if (!type) return false;
+  const t = type.toUpperCase();
+  return t.includes("INVITATION") || t.includes("제안") || t === "PROJECT_INVITATION";
+}

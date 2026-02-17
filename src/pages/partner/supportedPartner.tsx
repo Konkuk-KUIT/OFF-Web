@@ -1,8 +1,14 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Page from "../../components/Page";
 import PartnerPortfolioCard, {
   type PortfolioItemData,
 } from "./PartnerPortfolioCard";
+import {
+  getNotifications,
+  parseInvitationIdFromRedirectUrl,
+  isProjectInvitationType,
+} from "../../api/notifications";
 
 const chaticonUrl = new URL("../../assets/chaticon.svg", import.meta.url).href;
 
@@ -34,6 +40,31 @@ const MOCK_SUPPORTED_PARTNER = {
 
 export default function SupportedPartner() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [invitationId, setInvitationId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fromState = (location.state as { invitationId?: number } | null)?.invitationId;
+    if (fromState != null) {
+      setInvitationId(fromState);
+      return;
+    }
+    getNotifications({ size: 20 })
+      .then((res) => {
+        const list = res.data.data?.notifications ?? [];
+        const invitation = list.find(
+          (n) =>
+            isProjectInvitationType(n.type) &&
+            parseInvitationIdFromRedirectUrl(n.redirectUrl) != null
+        );
+        const id = invitation
+          ? parseInvitationIdFromRedirectUrl(invitation.redirectUrl)
+          : null;
+        setInvitationId(id);
+      })
+      .catch(() => setInvitationId(null));
+  }, [location.state]);
+
   const data = MOCK_SUPPORTED_PARTNER;
 
   return (
@@ -96,7 +127,11 @@ export default function SupportedPartner() {
       <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
         <button
           type="button"
-          onClick={() => navigate("/partner/supported/confirm")}
+          onClick={() =>
+            navigate("/partner/supported/confirm", {
+              state: invitationId != null ? { invitationId } : undefined,
+            })
+          }
           className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"
         >
           수락하기

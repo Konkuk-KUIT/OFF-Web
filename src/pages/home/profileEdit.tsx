@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Page from "../../components/Page";
+import { applyProject } from "../../api/project";
 
 const ROLES = [
-  { id: "planner", label: "기획자" },
-  { id: "developer", label: "개발자" },
-  { id: "designer", label: "디자이너" },
-  { id: "marketer", label: "마케터" },
-  { id: "editor", label: "영상 편집자" },
+  { id: "planner", label: "기획자", apiRole: "PM" as const },
+  { id: "developer", label: "개발자", apiRole: "DEV" as const },
+  { id: "designer", label: "디자이너", apiRole: "DES" as const },
+  { id: "marketer", label: "마케터", apiRole: "MAR" as const },
+  { id: "editor", label: "영상 편집자", apiRole: null },
 ] as const;
 
 const labelClass = "block text-sm font-semibold text-zinc-900";
@@ -16,8 +17,14 @@ const inputClass =
 
 type PortfolioItem = { desc: string; url: string };
 
+type LocationState = { projectId?: number };
+
 export default function ProfileEdit() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState | null;
+  const projectId = state?.projectId;
+
   const [nickname, setNickname] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>(["developer"]);
   const [projectExpCount, setProjectExpCount] = useState("");
@@ -27,6 +34,8 @@ export default function ProfileEdit() {
   ]);
   const [bio, setBio] = useState("");
   const [showCompleteToast, setShowCompleteToast] = useState(false);
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const toggleRole = (id: string) => {
     setSelectedRoles((prev) =>
@@ -47,6 +56,33 @@ export default function ProfileEdit() {
   };
 
   const handleSubmit = () => {
+    if (projectId != null) {
+      const roleEntry = ROLES.find((r) => r.apiRole && selectedRoles.includes(r.id));
+      const apiRole = roleEntry?.apiRole;
+      if (!apiRole) {
+        setApplyError("지원할 직무를 1개 이상 선택해주세요. (기획/개발/디자인/마케팅)");
+        return;
+      }
+      setApplyError(null);
+      setApplyLoading(true);
+      applyProject(projectId, { role: apiRole })
+        .then(() => {
+          setShowCompleteToast(true);
+          setTimeout(() => {
+            setShowCompleteToast(false);
+            navigate("/");
+          }, 2000);
+        })
+        .catch((err: unknown) => {
+          const msg =
+            (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+          setApplyError(msg ?? "프로젝트 지원에 실패했습니다.");
+        })
+        .finally(() => {
+          setApplyLoading(false);
+        });
+      return;
+    }
     setShowCompleteToast(true);
     setTimeout(() => {
       setShowCompleteToast(false);
@@ -174,12 +210,16 @@ export default function ProfileEdit() {
 
       {/* 지원하기 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
+        {applyError && (
+          <p className="mb-2 text-center text-sm text-red-600">{applyError}</p>
+        )}
         <button
           type="button"
           onClick={handleSubmit}
-          className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"
+          disabled={applyLoading}
+          className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white disabled:opacity-50"
         >
-          지원하기
+          {applyLoading ? "처리 중..." : "지원하기"}
         </button>
       </div>
     </Page>

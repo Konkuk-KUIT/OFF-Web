@@ -23,10 +23,55 @@ import type { BaseResponse } from "./types";
 // { name, description, projectTypeId, requirement, serviceSummary, endDate, totalEstimate, recruitmentList }
 
 export type RecruitmentRequest = {
-    roleId: string; // "PM","DEV","DES","MAR" ? Spec says "roleId" string. Maybe enum?
+    roleId: string;
     count: number;
 };
 
+/** ===== 프로젝트 견적 미리보기 POST /projects/estimate (DB 저장 없음) ===== */
+export type EstimateProjectPayload = {
+    name: string;
+    description: string;
+    projectTypeId: number;
+    requirement: string;
+    recruitmentList: RecruitmentRequest[];
+};
+
+export type EstimateCandidatePartner = {
+    memberId: number;
+    nickname: string;
+    introduction: string;
+    projectCount: number;
+    suggestedCost: number;
+};
+
+export type EstimateItem = {
+    role: string;
+    cost: number;
+    count: number;
+    candidatePartners: EstimateCandidatePartner[];
+};
+
+export type EstimateProjectResponse = {
+    projectType: string;
+    recruitmentRoles: string[];
+    endDate: string;
+    serviceSummary: string;
+    totalEstimate: number;
+    estimateList: EstimateItem[];
+};
+
+export async function estimateProject(payload: EstimateProjectPayload): Promise<EstimateProjectResponse> {
+    const res = await axiosInstance.post<BaseResponse<EstimateProjectResponse>>("/projects/estimate", payload);
+    if (!res.data.success) throw new Error(res.data.message || "견적 조회 실패");
+    return res.data.data;
+}
+
+/**
+ * ===== 프로젝트 확정 생성 POST /projects/confirm =====
+ * 명세 ConfirmProjectRequest와 동일:
+ * name, description, projectTypeId(int64), requirement, serviceSummary, endDate, totalEstimate(int64), recruitmentList[]
+ * RecruitmentRequest: roleId(string), count(int32)
+ */
 export type ConfirmProjectPayload = {
     name: string;
     description: string;
@@ -42,8 +87,6 @@ export type ConfirmProjectResponse = {
     projectId: number;
 };
 
-// Renaming createProject to confirmProject internally or keep name but change endpoint?
-// I'll keep name `createProject` but call `confirmProject` API.
 export async function createProject(payload: ConfirmProjectPayload): Promise<ConfirmProjectResponse> {
     const res = await axiosInstance.post<BaseResponse<ConfirmProjectResponse>>("/projects/confirm", payload);
     if (!res.data.success) throw new Error(res.data.message || "프로젝트 생성 실패");
@@ -171,6 +214,37 @@ export type InvitePartnerRequest = {
 export async function invitePartner(projectId: number, payload: InvitePartnerRequest): Promise<void> {
     const res = await axiosInstance.post<BaseResponse<void>>(`/projects/${projectId}/invitations`, payload);
     if (!res.data.success) throw new Error(res.data.message || "파트너 초대 실패");
+}
+
+/** ===== 파트너 제안 수락 (POST /invitations/{invitationId}/accept) ===== */
+export type AcceptInvitationResponse = {
+    applicationId: number;
+};
+
+export async function acceptInvitation(invitationId: number): Promise<AcceptInvitationResponse> {
+    const res = await axiosInstance.post<BaseResponse<AcceptInvitationResponse>>(
+        `/invitations/${invitationId}/accept`
+    );
+    if (!res.data.success) throw new Error(res.data.message || "제안 수락 실패");
+    return res.data.data;
+}
+
+/** ===== 프로젝트 지원 (POST /projects/{projectId}/applications) - 파트너가 프로젝트에 지원 ===== */
+export type ApplyProjectRequest = {
+    role: string;
+};
+
+export type ApplyProjectResponse = {
+    applicationId: number;
+};
+
+export async function applyProject(projectId: number, payload: ApplyProjectRequest): Promise<ApplyProjectResponse> {
+    const res = await axiosInstance.post<BaseResponse<ApplyProjectResponse>>(
+        `/projects/${projectId}/applications`,
+        payload
+    );
+    if (!res.data.success) throw new Error(res.data.message || "프로젝트 지원 실패");
+    return res.data.data;
 }
 
 /** ===== 파트너 모집 (Open Recruitment) - Spec Mismatch ===== */

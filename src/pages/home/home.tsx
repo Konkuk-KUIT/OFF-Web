@@ -130,7 +130,6 @@ const aiBannerTextStyle: React.CSSProperties = {
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateButton, setShowCreateButton] = useState(true);
   const [projects, setProjects] = useState<HomeProjectItem[]>([]);
   const [partners, setPartners] = useState<HomePartnerItem[]>([]);
 
@@ -142,7 +141,6 @@ export default function Home() {
       .then((res) => {
         if (cancelled) return;
         const { data } = res.data;
-        setShowCreateButton(data.showCreateButton);
         setProjects(data.projects ?? []);
         setPartners(data.partners ?? []);
       })
@@ -216,19 +214,17 @@ export default function Home() {
             <p style={aiBannerTextStyle}>프로젝트를 관리하세요</p>
           </div>
         </div>
-        {showCreateButton && (
-          <div className="relative z-10 mt-4 flex justify-center">
-            <Link
-              to="/project/create"
-              className="inline-flex h-[50px] min-w-0 shrink-0 items-center justify-center rounded-[50px] bg-[var(--gray-gray_900,#121212)] px-8 py-[14px] text-white whitespace-nowrap"
-              style={{
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              프로젝트 생성하기
-            </Link>
-          </div>
-        )}
+        <div className="relative z-10 mt-4 flex justify-center">
+          <Link
+            to="/project/create"
+            className="inline-flex h-[50px] min-w-0 shrink-0 items-center justify-center rounded-[50px] bg-[var(--gray-gray_900,#121212)] px-8 py-[14px] text-white whitespace-nowrap"
+            style={{
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            프로젝트 생성하기
+          </Link>
+        </div>
       </section>
 
       {/* 진행중인 프로젝트 */}

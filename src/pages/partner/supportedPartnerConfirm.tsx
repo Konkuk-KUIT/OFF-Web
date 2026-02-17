@@ -1,4 +1,7 @@
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Page from "../../components/Page";
+import { acceptInvitation } from "../../api/project";
 
 const SERVICE_SUMMARY =
   "서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리";
@@ -31,6 +34,29 @@ const paymentBarStyle: React.CSSProperties = {
 };
 
 export default function SupportedPartnerConfirm() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const invitationId = (location.state as { invitationId?: number } | null)?.invitationId ?? null;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleMatchComplete = async () => {
+    if (invitationId == null) {
+      setError("제안 정보를 찾을 수 없습니다. 알림에서 다시 시도해 주세요.");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const { applicationId } = await acceptInvitation(invitationId);
+      navigate("/account", { state: { applicationId }, replace: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "제안 수락에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Page className="pb-36 pt-2">
       <div className="space-y-5">
@@ -91,12 +117,17 @@ export default function SupportedPartnerConfirm() {
           <span className="text-sm font-medium">결제 비용</span>
           <span className="text-base font-semibold">150,000원</span>
         </div>
+        {error && (
+          <p className="mt-2 text-center text-sm text-red-600">{error}</p>
+        )}
         <div className="pt-4">
           <button
             type="button"
-            className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"
+            onClick={handleMatchComplete}
+            disabled={loading || invitationId == null}
+            className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white disabled:opacity-50"
           >
-            파트너 매칭 완료하기
+            {loading ? "처리 중..." : "파트너 매칭 완료하기"}
           </button>
         </div>
       </div>
