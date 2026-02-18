@@ -11,19 +11,30 @@ import {
 export default function My() {
   const [profile, setProfile] = useState<MyPageProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const api = await getMyProfile();
+      setProfile(mapToMyPageProfile(api));
+    } catch (e) {
+      console.error(e);
+      setProfile(null);
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      setError(
+        status === 500
+          ? "일시적인 서버 오류입니다. 잠시 후 다시 시도해 주세요."
+          : "프로필을 불러오지 못했습니다."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const api = await getMyProfile();
-        setProfile(mapToMyPageProfile(api));
-      } catch (e) {
-        console.error(e);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchProfile();
   }, []);
 
   const menus = [
@@ -43,7 +54,15 @@ export default function My() {
   if (!profile) {
     return (
       <main className="w-full bg-white p-5">
-        <p className="text-[13px] text-red-500">프로필을 불러오지 못했습니다.</p>
+        <p className="text-[13px] text-red-500">{error ?? "프로필을 불러오지 못했습니다."}</p>
+        <button
+          type="button"
+          onClick={fetchProfile}
+          disabled={loading}
+          className="mt-3 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 disabled:opacity-50"
+        >
+          다시 시도
+        </button>
       </main>
     );
   }

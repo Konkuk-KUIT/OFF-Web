@@ -110,9 +110,10 @@ export function mapToMyPageProfile(api: ProfileResponse): MyPageProfile {
 export type ProjectItem = {
   id: number;
   name: string;
-  amount: number;
-  paidAt: string; // date-time
-  createdAt: string; // date-time
+  /** 결제 금액(원). 백엔드 Long은 JSON에서 number로 올 수 있음 */
+  amount: number | string | null;
+  paidAt: string | null; // date-time
+  createdAt: string | null; // date-time
 };
 
 export type MyProjectsResponse = {

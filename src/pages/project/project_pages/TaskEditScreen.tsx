@@ -53,20 +53,29 @@ export default function TaskEditPage() {
 
   const handleSave = async () => {
     if (!projectId || !taskId || !task) return;
+    // 담당자: tasks[].assigneeProjectMemberId 유지 또는 members[].projectMemberId 중 선택
+    const projectMemberId =
+      task.assigneeProjectMemberId ??
+      projectMembers.find((m) => m.nickname === task.assigneeName)?.projectMemberId ??
+      projectMembers[0]?.projectMemberId ??
+      projectMembers[0]?.memberId;
+    if (projectMemberId == null || projectMemberId <= 0) {
+      alert("담당자 정보를 찾을 수 없습니다. 프로젝트 상세를 다시 불러와 주세요.");
+      return;
+    }
     try {
-      // Find member ID by assigneeName if possible, or default
-      const assignedMember = projectMembers.find(m => m.nickname === task.assigneeName);
-      const memberId = assignedMember ? assignedMember.memberId : (projectMembers[0]?.memberId || 0);
-
       await updateTask(Number(projectId), Number(taskId), {
         name: task.name,
         description: task.description,
-        projectMemberId: memberId,
-        toDoList: task.toDoList.map(t => ({ id: t.toDoId, content: t.content }))
+        projectMemberId: Number(projectMemberId),
+        toDoList: task.toDoList.map((t) => ({
+          id: t.toDoId ?? null,
+          content: t.content ?? ""
+        }))
       });
       alert("저장되었습니다.");
       navigate(`/project/${projectId}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       alert("수정에 실패했습니다.");
     }

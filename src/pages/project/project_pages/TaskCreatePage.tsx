@@ -26,25 +26,20 @@ export default function TaskCreatePage() {
       return;
     }
 
-    // TODO: We need real projectMemberId. 
-    // For now, if project has members, take the first one, or use a dummy.
-    // In a real app we'd find the "Me" member.
-    let targetMemberId = 0;
-    if (project && project.members && project.members.length > 0) {
-      targetMemberId = project.members[0].memberId;
-    } else {
-      // Fallback or alert?
-      // alert("프로젝트 멤버 정보를 찾을 수 없습니다.");
-      // return;
-      targetMemberId = 1; // Fallback
+    // 담당자 지정: GET /projects/{projectId} 응답의 members[].projectMemberId 사용
+    const firstMember = project?.members?.[0];
+    const projectMemberId = firstMember?.projectMemberId ?? firstMember?.memberId;
+    if (projectMemberId == null || projectMemberId <= 0) {
+      alert("프로젝트 멤버 정보를 찾을 수 없습니다. 프로젝트 상세를 다시 불러와 주세요.");
+      return;
     }
 
     try {
       setLoading(true);
       await createTask(Number(projectId), {
-        name: title, // API expects 'name'
+        name: title,
         description,
-        projectMemberId: targetMemberId,
+        projectMemberId: Number(projectMemberId),
         toDoList: []
       });
       alert("Task가 생성되었습니다.");

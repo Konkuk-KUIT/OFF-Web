@@ -155,12 +155,16 @@ export type TaskSummary = {
     name: string;
     description: string;
     assigneeName: string;
+    /** 담당자 지정/수정 시 사용 (members[].projectMemberId와 매칭) */
+    assigneeProjectMemberId?: number;
     progressPercent: number;
     toDoList: ToDoSummary[];
 };
 
 export type MemberSummary = {
     memberId: number;
+    /** 담당자 지정 시 사용 (태스크 생성/수정 요청의 projectMemberId) */
+    projectMemberId?: number;
     nickname: string;
     profileImage: string;
     role: "PM" | "DEV" | "DES" | "MAR";
@@ -399,7 +403,8 @@ export type TaskUpdateRequest = {
     name: string;
     description: string;
     projectMemberId: number;
-    toDoList: { id: number; content: string }[]; // Spec says ToDoItem { id, content }
+    /** id 있으면 기존 항목 수정, id null이면 신규 생성. 목록에 없으면 삭제됨 */
+    toDoList: { id: number | null; content: string }[];
 };
 
 export async function updateTask(_projectId: number, taskId: number, payload: TaskUpdateRequest): Promise<void> {
