@@ -125,15 +125,6 @@ function serializeConfirmPayload(payload: ConfirmProjectPayload): Record<string,
 
 export async function createProject(payload: ConfirmProjectPayload): Promise<ConfirmProjectResponse> {
     const body = serializeConfirmPayload(payload);
-    if (import.meta.env.DEV) {
-        console.debug("[createProject] POST /projects/confirm", body);
-        console.log(
-            "%c[REQUEST 형식] POST /projects/confirm",
-            "font-weight: bold; color: #0ea5e9",
-            "\n",
-            JSON.stringify(body, null, 2)
-        );
-    }
     const res = await axiosInstance.post<BaseResponse<ConfirmProjectResponse>>(
         "/projects/confirm",
         body,
@@ -261,17 +252,18 @@ export type InvitePartnerRequest = {
     role: string;
 };
 
+/** POST /projects/{projectId}/invitations — 기획자가 파트너에게 제안(초대) */
 export async function invitePartner(projectId: number, payload: InvitePartnerRequest): Promise<void> {
     const res = await axiosInstance.post<BaseResponse<void>>(`/projects/${projectId}/invitations`, payload);
     if (!res.data.success) throw new Error(res.data.message || "파트너 초대 실패");
 }
 
-/** ===== 파트너 제안 수락 (POST /invitations/{applicationId}/accept) ===== */
+/** ===== 파트너 제안 수락: POST /invitations/{invitationId}/accept ===== */
 export type AcceptInvitationResponse = {
     applicationId: number;
 };
 
-/** 가이드: POST /invitations/{applicationId}/accept — 파트너가 초대 수락 시 호출 */
+/** POST /invitations/{invitationId}/accept — 파트너가 초대 수락 시 호출 (invitationId = 알림/초대 상세의 applicationId) */
 export async function acceptInvitationByApplicationId(applicationId: number): Promise<AcceptInvitationResponse> {
     const res = await axiosInstance.post<BaseResponse<AcceptInvitationResponse>>(
         `/invitations/${applicationId}/accept`
@@ -280,7 +272,7 @@ export async function acceptInvitationByApplicationId(applicationId: number): Pr
     return res.data.data;
 }
 
-/** 레거시: invitationId로 수락 (동일 path 사용 가능한 경우) */
+/** POST /invitations/{invitationId}/accept — invitationId로 수락 (acceptInvitationByApplicationId와 동일 API) */
 export async function acceptInvitation(invitationId: number): Promise<AcceptInvitationResponse> {
     return acceptInvitationByApplicationId(invitationId);
 }
@@ -352,11 +344,7 @@ export type RecruitPartnerPayload = {
     }
 };
 
-export async function recruitPartner(_projectId: number, payload: RecruitPartnerPayload): Promise<void> {
-    console.warn("recruitPartner API not found in spec. Payload:", payload);
-    // throw new Error("Partner Recruitment API is not available in the current specification.");
-    // For now, we simulate success or fail?
-    // If I throw, the user can't use the page.
+export async function recruitPartner(_projectId: number, _payload: RecruitPartnerPayload): Promise<void> {
     alert("현재 API 명세서에 '파트너 모집(Open Recruitment)' 엔드포인트가 없습니다. (InvitePartner만 존재)");
 }
 

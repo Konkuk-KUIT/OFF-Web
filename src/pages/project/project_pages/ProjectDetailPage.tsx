@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Screen,
   SectionTitle,
@@ -12,13 +12,18 @@ import {
   RightArrow,
   SubTitle,
 } from "../components/_ui";
-import { getProjectDetail, type ProjectDetail } from "../../../api/project";
+import { getProjectDetail, acceptInvitationByApplicationId, type ProjectDetail } from "../../../api/project";
 
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projectId } = useParams();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  /** 알림(파트너 제안)에서 들어온 경우: 수락하기 플로우 */
+  const applicationId = (location.state as { applicationId?: number } | null)?.applicationId ?? null;
+  const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
 
   useEffect(() => {
     if (projectId) {
@@ -29,11 +34,7 @@ export default function ProjectDetailPage() {
         .then((data) => {
           setProject(data);
         })
-        .catch((err) => {
-          console.error("Failed to fetch project detail:", err);
-          // alert("프로젝트 정보를 불러오는데 실패했습니다.");
-          // navigate(-1); // Go back or to list
-        })
+        .catch(() => {})
         .finally(() => {
           setLoading(false);
         });
@@ -186,20 +187,48 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {/* 지원하기 버튼 - 하단 고정, 풀폭 파란 pill */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/home/profile-edit", {
-              state: { projectId: projectId ? Number(projectId) : undefined },
-            })
-          }
-          className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"
-        >
-          지원하기
-        </button>
-      </div>
+      {/* 파트너 제안(알림)에서 온 경우: 수락하기 → 기획자 알림(백엔드) 후 결제 페이지 이동 */}
+      {applicationId != null && applicationId > 0 ? (
+        <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
+          {acceptError && (
+            <p className="mb-2 text-center text-sm text-red-600">{acceptError}</p>
+          )}
+          <button
+            type="button"
+            disabled={accepting}
+            onClick={() => {
+              setAcceptError(null);
+              setAccepting(true);
+              acceptInvitationByApplicationId(applicationId)
+                .then(() => {
+                  navigate("/home", { replace: true });
+                })
+                .catch((e) => {
+                  setAcceptError(e instanceof Error ? e.message : "수락 처리에 실패했습니다.");
+                })
+                .finally(() => setAccepting(false));
+            }}
+            className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white disabled:opacity-50"
+          >
+            {accepting ? "처리 중..." : "수락하기"}
+          </button>
+        </div>
+      ) : (
+        /* 지원하기 버튼 - 하단 고정, 풀폭 파란 pill */
+        <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/home/profile-edit", {
+                state: { projectId: projectId ? Number(projectId) : undefined },
+              })
+            }
+            className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"
+          >
+            지원하기
+          </button>
+        </div>
+      )}
     </Screen>
   );
 }

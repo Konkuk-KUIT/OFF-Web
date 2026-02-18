@@ -35,6 +35,15 @@ export default function PartnerInvitation() {
       .finally(() => setLoading(false));
   }, [applicationId]);
 
+  /** 알림에서 왔을 때: 초대 상세 로드 후 프로젝트 페이지로 이동 (자세히 보기 → 프로젝트 페이지) */
+  useEffect(() => {
+    if (!detail?.projectId || applicationId == null) return;
+    navigate(`/project/${detail.projectId}`, {
+      replace: true,
+      state: { applicationId },
+    });
+  }, [detail?.projectId, applicationId, navigate]);
+
   const handleAccept = () => {
     if (applicationId == null || applicationId <= 0) return;
     setAccepting(true);
@@ -81,6 +90,15 @@ export default function PartnerInvitation() {
             홈으로
           </button>
         </div>
+      </Page>
+    );
+  }
+
+  /* 알림에서 왔을 때: 상세 로드 후 프로젝트 페이지로 리다이렉트하므로 폼 대신 안내만 표시 */
+  if (!loading && detail?.projectId && applicationId != null) {
+    return (
+      <Page className="pb-28 pt-2" title="초대 상세">
+        <p className="mb-4 text-center text-sm text-zinc-500">프로젝트 페이지로 이동 중...</p>
       </Page>
     );
   }

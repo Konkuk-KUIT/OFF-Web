@@ -59,7 +59,6 @@ export default function PaymentPage() {
         failUrl: `${window.location.origin}/payment/fail`,
       });
     } catch (err) {
-      console.error("결제 실패:", err);
       setError(err instanceof Error ? err.message : "결제 요청 중 오류가 발생했습니다.");
     }
   };

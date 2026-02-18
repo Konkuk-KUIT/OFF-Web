@@ -17,12 +17,8 @@ async function postWith404Fallback<T>(
   payload: unknown,
   defaultErrorMessage: string
 ): Promise<T> {
-  let last404: unknown = null;
   for (const path of paths) {
     try {
-      if (import.meta.env.DEV) {
-        console.log("[payment] POST", path, payload);
-      }
       const res = await axiosInstance.post<BaseResponse<T>>(path, payload);
       if (!res.data.success) throw new Error(res.data.message ?? defaultErrorMessage);
       return res.data.data;
@@ -30,48 +26,10 @@ async function postWith404Fallback<T>(
       const ax = e as { response?: { status?: number; data?: unknown } };
       const status = ax?.response?.status;
       const serverMsg = extractMessageFromUnknownResponseData(ax?.response?.data);
-      // status 404 + message가 있으면 "리소스 없음" 가능성이 높으므로 fallback 시도하지 않고 메시지로 종료
       if (status === 404 && serverMsg) throw new Error(serverMsg);
-      if (status === 404) {
-        last404 = e;
-        continue;
-      }
+      if (status === 404) continue;
       throw e;
     }
-  }
-  if (import.meta.env.DEV) {
-    console.error("[payment] 404 on all prepare endpoints:", paths, last404);
-  }
-  throw new Error(`결제 API 경로를 찾을 수 없습니다. (${paths.join(" 또는 ")})`);
-}
-
-async function getWith404Fallback<T>(
-  paths: string[],
-  defaultErrorMessage: string
-): Promise<T> {
-  let last404: unknown = null;
-  for (const path of paths) {
-    try {
-      if (import.meta.env.DEV) {
-        console.log("[payment] GET", path);
-      }
-      const res = await axiosInstance.get<BaseResponse<T>>(path);
-      if (!res.data.success) throw new Error(res.data.message ?? defaultErrorMessage);
-      return res.data.data;
-    } catch (e: unknown) {
-      const ax = e as { response?: { status?: number; data?: unknown } };
-      const status = ax?.response?.status;
-      const serverMsg = extractMessageFromUnknownResponseData(ax?.response?.data);
-      if (status === 404 && serverMsg) throw new Error(serverMsg);
-      if (status === 404) {
-        last404 = e;
-        continue;
-      }
-      throw e;
-    }
-  }
-  if (import.meta.env.DEV) {
-    console.error("[payment] 404 on all client-key endpoints:", paths, last404);
   }
   throw new Error(`결제 API 경로를 찾을 수 없습니다. (${paths.join(" 또는 ")})`);
 }

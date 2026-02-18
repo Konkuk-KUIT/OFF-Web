@@ -150,9 +150,6 @@ export default function Home() {
     getHome({ page: 0, size: 20 })
       .then((res) => {
         if (cancelled) return;
-        if (import.meta.env.DEV) {
-          console.log("[Home] 서버 원본 데이터:", res.data);
-        }
         const body = res.data as { data?: { projects?: unknown; partners?: unknown[] }; result?: { projects?: unknown; partners?: unknown[] } };
         const payload = (body?.data ?? body?.result ?? body) as { projects?: unknown; partners?: HomePartnerItem[] } | undefined;
         const rawProjects = payload?.projects;
@@ -164,9 +161,6 @@ export default function Home() {
         const partnerList = Array.isArray(payload?.partners) ? payload.partners : [];
         setProjects(projectList);
         setPartners(partnerList);
-        if (import.meta.env.DEV) {
-          console.log("[Home] 파싱된 프로젝트 수:", projectList.length, "projects 구조:", Array.isArray(rawProjects) ? "배열" : (rawProjects && "content" in (rawProjects as object) ? "content 객체" : "기타"));
-        }
       })
       .catch((err) => {
         if (cancelled) return;

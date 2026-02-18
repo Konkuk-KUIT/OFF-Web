@@ -128,14 +128,6 @@ export default function ProjectCreate() {
         response?: { status?: number; data?: { message?: string } };
       };
       const msgFromServer = ax?.response?.data?.message;
-      if (import.meta.env.DEV) {
-        console.error("[estimateProject] error:", {
-          message: ax?.message,
-          code: ax?.code,
-          status: ax?.response?.status,
-          data: ax?.response?.data,
-        });
-      }
       if (!ax?.response) {
         setError(
           ax?.code === "ECONNABORTED"

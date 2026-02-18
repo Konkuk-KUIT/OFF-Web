@@ -28,7 +28,6 @@ export default function PaymentSuccess() {
           navigate("/home", { replace: true });
         }, 2000);
       } catch (err) {
-        console.error("결제 확인 실패:", err);
         setStatus("fail");
       }
     };

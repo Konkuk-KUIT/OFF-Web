@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import Page from "../../components/Page";
 import { createProject } from "../../api/project";
 import type {
@@ -279,9 +279,6 @@ export default function PartnerRecruit() {
       const ax = err as { response?: { data?: { message?: string }; status?: number }; message?: string };
       const serverMsg = ax?.response?.data?.message;
       const thrownMsg = err instanceof Error ? err.message : null;
-      if (import.meta.env.DEV) {
-        console.error("[handleStartRecruit] 실패:", ax?.response?.status ?? "no response", ax?.response?.data ?? err);
-      }
       setError(thrownMsg || serverMsg || (ax?.response?.status === 500 ? "서버 내부 오류입니다." : "프로젝트 확정에 실패했습니다."));
     } finally {
       setSubmitting(false);
@@ -413,9 +410,12 @@ export default function PartnerRecruit() {
                   </span>
                 </div>
                 <div className="mt-3 flex justify-end">
-                  <button type="button" className="text-sm font-medium text-zinc-700">
+                  <Link
+                    to={`/partner/${partner.memberId}`}
+                    className="text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                  >
                     자세히 보기 &gt;
-                  </button>
+                  </Link>
                 </div>
               </article>
             ))}
