@@ -308,7 +308,7 @@ export default function Home() {
                 </p>
                 <div className="mt-3 flex justify-end">
                   <span className="text-sm text-zinc-500">
-                    프로젝트 {partner.projectCount}회 · 포트폴리오 {partner.portfolioCount}개
+                    프로젝트 {partner.projectCount} · 포트폴리오 {partner.portfolioCount}개
                   </span>
                 </div>
                 <div className="mt-1 flex justify-end">

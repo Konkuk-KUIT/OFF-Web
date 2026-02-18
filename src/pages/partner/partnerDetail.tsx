@@ -5,7 +5,7 @@ import PartnerPortfolioCard from "./PartnerPortfolioCard";
 import { getPartnerProfile, getRoleLabel } from "../../api/partner";
 import { getMyProjects, type ProjectItem } from "../../api/member";
 import { invitePartner } from "../../api/project";
-import { sendFirstMessage } from "../../api/chat";
+import { getChatRooms, sendFirstMessage } from "../../api/chat";
 
 const chaticonUrl = new URL("../../assets/chaticon.svg", import.meta.url).href;
 
@@ -35,6 +35,8 @@ export default function PartnerDetail() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [showFirstMessageModal, setShowFirstMessageModal] = useState(false);
+  const [firstMessageInput, setFirstMessageInput] = useState("");
 
   useEffect(() => {
     if (!id) {
@@ -82,18 +84,51 @@ export default function PartnerDetail() {
       });
   };
 
+  /** 채팅하기: 1) GET /chat/rooms(CONTACT) 2) 방 있으면 바로 이동, 없으면 첫 메시지 입력 모달 → 전송 시 POST /chat/rooms/first */
   const handleChatClick = () => {
     if (!profile) return;
     setChatError(null);
     setChatLoading(true);
-    sendFirstMessage({
-      opponentId: profile.memberId,
-      content: "안녕하세요",
-    })
+    getChatRooms("CONTACT")
+      .then((res) => {
+        const rooms = res.data?.data?.chatRoomResponses ?? [];
+        const existing = rooms.find(
+          (r: { chatRoomId?: number; roomId?: number; partnerId?: number; partnerNickname?: string }) =>
+            r.partnerId === profile!.memberId || r.partnerNickname === profile!.nickname
+        );
+        const roomId = existing ? (existing.chatRoomId ?? existing.roomId) : null;
+        if (roomId != null) {
+          navigate(`/chat/${Number(roomId)}`);
+          return;
+        }
+        setFirstMessageInput("");
+        setShowFirstMessageModal(true);
+      })
+      .catch((err: unknown) => {
+        const msg =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        setChatError(msg ?? "채팅을 시작할 수 없습니다.");
+      })
+      .finally(() => setChatLoading(false));
+  };
+
+  const handleFirstMessageSubmit = () => {
+    if (!profile) return;
+    const content = firstMessageInput.trim();
+    if (!content) {
+      setChatError("첫 메시지를 입력해 주세요.");
+      return;
+    }
+    setChatError(null);
+    setChatLoading(true);
+    console.log("[POST /chat/rooms/first] 파트너 id (opponentId):", profile.memberId);
+    sendFirstMessage({ opponentId: profile.memberId, content })
       .then((res) => {
         const chatRoomId = res.data?.data?.chatRoomId;
         if (chatRoomId != null) {
-          navigate(`/chat/${chatRoomId}`);
+          setShowFirstMessageModal(false);
+          setFirstMessageInput("");
+          navigate(`/chat/${Number(chatRoomId)}`);
         } else {
           setChatError("채팅방을 열 수 없습니다.");
         }
@@ -103,9 +138,7 @@ export default function PartnerDetail() {
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
         setChatError(msg ?? "채팅을 시작할 수 없습니다.");
       })
-      .finally(() => {
-        setChatLoading(false);
-      });
+      .finally(() => setChatLoading(false));
   };
 
   const handleSelectProject = (project: ProjectItem) => {
@@ -294,6 +327,44 @@ export default function PartnerDetail() {
           요청하기
         </button>
       </div>
+
+      {/* 첫 메시지 입력 모달: 방 없을 때만 표시, 전송 시 POST /chat/rooms/first */}
+      {showFirstMessageModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-lg">
+            <h3 className="text-lg font-bold text-zinc-900">첫 메시지를 입력하세요</h3>
+            <textarea
+              value={firstMessageInput}
+              onChange={(e) => setFirstMessageInput(e.target.value)}
+              placeholder="안녕하세요, 백엔드 포지션 지원하고 싶습니다!"
+              rows={3}
+              className="mt-3 w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[#0060EF] focus:outline-none"
+            />
+            {chatError && <p className="mt-2 text-sm text-red-600">{chatError}</p>}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFirstMessageModal(false);
+                  setFirstMessageInput("");
+                  setChatError(null);
+                }}
+                className="flex-1 rounded-full border border-zinc-300 py-3 text-sm font-medium text-zinc-700"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleFirstMessageSubmit}
+                disabled={chatLoading || !firstMessageInput.trim()}
+                className="flex-1 rounded-full bg-[#0060EF] py-3 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {chatLoading ? "전송 중..." : "전송"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Page>
   );
 }
