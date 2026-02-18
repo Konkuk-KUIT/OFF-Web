@@ -11,6 +11,7 @@ import {
 } from "../../api/notifications";
 import { getApplicationDetail, type ApplicationDetailResponse } from "../../api/project";
 import { getRoleLabel } from "../../api/partner";
+import { getChatRooms, sendFirstMessage } from "../../api/chat";
 
 const chaticonUrl = new URL("../../assets/chaticon.svg", import.meta.url).href;
 
@@ -80,6 +81,8 @@ export default function SupportedPartner() {
   const [applicationDetail, setApplicationDetail] = useState<ApplicationDetailResponse | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     const fromState = location.state as {
@@ -138,6 +141,47 @@ export default function SupportedPartner() {
       }
     : MOCK_SUPPORTED_PARTNER;
 
+  /** 채팅하기: 기존 CONTACT 방 있으면 해당 방으로, 없으면 POST /chat/rooms/first 후 방으로 이동 */
+  const handleChatClick = () => {
+    const partnerId = applicationDetail?.partnerId;
+    if (partnerId == null || partnerId <= 0) {
+      setChatError("채팅할 파트너 정보가 없습니다.");
+      return;
+    }
+    setChatError(null);
+    setChatLoading(true);
+    getChatRooms("CONTACT")
+      .then((res) => {
+        const rooms = res.data?.data?.chatRoomResponses ?? [];
+        const existing = rooms.find(
+          (r: { chatRoomId?: number; roomId?: number; partnerId?: number; partnerNickname?: string }) =>
+            r.partnerId === partnerId || r.partnerNickname === applicationDetail?.partnerNickname
+        );
+        const roomId = existing ? (existing.chatRoomId ?? existing.roomId) : null;
+        if (roomId != null) {
+          navigate(`/chat/${roomId}`);
+          return;
+        }
+        return sendFirstMessage({ opponentId: partnerId, content: "안녕하세요" });
+      })
+      .then((res) => {
+        if (!res) return;
+        const chatRoomId = res.data?.data?.chatRoomId;
+        if (chatRoomId != null) {
+          navigate(`/chat/${chatRoomId}`);
+        } else {
+          setChatError("채팅방을 열 수 없습니다.");
+        }
+      })
+      .catch((err: unknown) => {
+        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        setChatError(msg ?? "채팅을 시작할 수 없습니다.");
+      })
+      .finally(() => {
+        setChatLoading(false);
+      });
+  };
+
   return (
     <Page className="pb-28 pt-2">
       {detailLoading && (
@@ -180,11 +224,19 @@ export default function SupportedPartner() {
             <h3 className="text-lg font-bold text-zinc-900">
               파트너의 포트폴리오
             </h3>
-            <span className="flex cursor-default items-center gap-1.5 text-sm font-medium text-zinc-700">
+            <button
+              type="button"
+              onClick={handleChatClick}
+              disabled={chatLoading || !applicationDetail?.partnerId}
+              className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-zinc-700 hover:text-zinc-900 disabled:opacity-50"
+            >
               채팅하기
               <img src={chaticonUrl} alt="" className="h-6 w-6 shrink-0" />
-            </span>
+            </button>
           </div>
+      {chatError && (
+        <p className="mt-2 text-sm text-red-600">{chatError}</p>
+      )}
 
           <ul className="space-y-3">
             {data.portfolios.map((item, i) => (

@@ -26,13 +26,22 @@ export type HomePartnerItem = {
   portfolioCount: number;
 };
 
+/** 백엔드가 Spring Data 페이지네이션으로 줄 때 (projects: { content: [...] }) */
+export type PaginatedResponse<T> = {
+  content: T[];
+  totalPages?: number;
+  totalElements?: number;
+  size?: number;
+  number?: number;
+};
+
 export type HomeResponse = {
   success: boolean;
   code: number;
   message: string;
   data: {
     showCreateButton: boolean;
-    projects: HomeProjectItem[];
+    projects: HomeProjectItem[] | PaginatedResponse<HomeProjectItem>;
     partners: HomePartnerItem[];
   };
 };
@@ -42,6 +51,11 @@ export type HomeQuery = {
   size?: number;
 };
 
+/**
+ * GET /home — 진행 중인 프로젝트·파트너 추천 조회.
+ * 프론트에서 size=20 등을 보내도 응답이 3개로 고정되면,
+ * 백엔드에서 Pageable 기본값(size=3) 또는 size 파라미터 미반영 여부 확인 필요.
+ */
 export const getHome = (params: HomeQuery = {}) => {
   const { page = 0, size = 10 } = params;
   return axiosInstance.get<HomeResponse>("/home", { params: { page, size } });

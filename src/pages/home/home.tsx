@@ -135,26 +135,38 @@ export default function Home() {
   const [projects, setProjects] = useState<HomeProjectItem[]>([]);
   const [partners, setPartners] = useState<HomePartnerItem[]>([]);
 
-  /** 홈 진입 시마다 GET /home 호출해 최신 프로젝트·파트너 목록 갱신 (location.key로 매 진입 시 재호출 보장) */
+  /**
+   * GET /home — projects가 배열이면 그대로, { content: [...] }면 content 사용.
+   * 백엔드에 전달할 문구: "홈 화면 API(GET /home) 호출 시 프론트에서 size=20을 보내고 있는데,
+   * 서버 응답이 계속 3개로 고정됩니다. 컨트롤러에서 Pageable 기본값이 3이거나 size 파라미터를
+   * 무시하고 있는지 확인 부탁드려요."
+   */
   useEffect(() => {
     if (pathname !== "/home") return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    getHome({ page: 0, size: 100 })
+
+    getHome({ page: 0, size: 20 })
       .then((res) => {
         if (cancelled) return;
-        // 명세: BaseResponseHomeResponse → data: HomeResponse { showCreateButton, projects, partners }
-        const body = res.data as { data?: { projects?: unknown[]; partners?: unknown[] }; result?: { projects?: unknown[]; partners?: unknown[] } };
-        const payload = body?.data ?? body?.result ?? body;
-        const data = payload as { projects?: HomeProjectItem[]; partners?: HomePartnerItem[]; content?: HomeProjectItem[] };
-        const projectList = Array.isArray(data?.projects) ? data.projects : (Array.isArray(data?.content) ? data.content : []);
-        const partnerList = Array.isArray(data?.partners) ? data.partners : [];
         if (import.meta.env.DEV) {
-          console.log("[Home] GET /home 프로젝트 수:", projectList.length, "파트너 수:", partnerList.length, "payload 키:", payload ? Object.keys(payload) : []);
+          console.log("[Home] 서버 원본 데이터:", res.data);
         }
+        const body = res.data as { data?: { projects?: unknown; partners?: unknown[] }; result?: { projects?: unknown; partners?: unknown[] } };
+        const payload = (body?.data ?? body?.result ?? body) as { projects?: unknown; partners?: HomePartnerItem[] } | undefined;
+        const rawProjects = payload?.projects;
+        const projectList: HomeProjectItem[] = Array.isArray(rawProjects)
+          ? rawProjects
+          : (rawProjects && typeof rawProjects === "object" && Array.isArray((rawProjects as { content?: HomeProjectItem[] }).content))
+            ? (rawProjects as { content: HomeProjectItem[] }).content
+            : [];
+        const partnerList = Array.isArray(payload?.partners) ? payload.partners : [];
         setProjects(projectList);
         setPartners(partnerList);
+        if (import.meta.env.DEV) {
+          console.log("[Home] 파싱된 프로젝트 수:", projectList.length, "projects 구조:", Array.isArray(rawProjects) ? "배열" : (rawProjects && "content" in (rawProjects as object) ? "content 객체" : "기타"));
+        }
       })
       .catch((err) => {
         if (cancelled) return;
