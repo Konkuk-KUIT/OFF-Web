@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getMyProjects, type ProjectItem } from "../../api/member";
 
 const formatKRW = (n: number) => n.toLocaleString("ko-KR") + "원";
@@ -20,6 +20,7 @@ function parseAmount(value: ProjectItem["amount"]): number | null {
 }
 
 export default function Projects() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,10 +70,11 @@ export default function Projects() {
           {items.map((it) => {
             const amountNum = parseAmount(it.amount);
             return (
-              <Link
+              <button
                 key={it.id}
-                to={{ pathname: `/project/${it.id}`, state: { fromMyProjects: true } }}
-                className="block rounded-2xl bg-gray-100 px-4 py-4 transition-opacity active:opacity-90"
+                type="button"
+                onClick={() => navigate(`/project/${it.id}`, { state: { fromMyProjects: true } })}
+                className="block w-full rounded-2xl bg-gray-100 px-4 py-4 text-left transition-opacity active:opacity-90"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -87,7 +89,7 @@ export default function Projects() {
                     {formatDate(it.createdAt)} ~
                   </p>
                 </div>
-              </Link>
+              </button>
             );
           })}
           {items.length === 0 && (
