@@ -13,6 +13,7 @@ import {
   SubTitle,
 } from "../components/_ui";
 import { getProjectDetail, acceptInvitationByApplicationId, type ProjectDetail } from "../../../api/project";
+import { getMyProfile } from "../../../api/member";
 
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [myNickname, setMyNickname] = useState<string | null>(null);
   /** 알림(파트너 제안)에서 들어온 경우: 수락하기 플로우 */
   const applicationId = (location.state as { applicationId?: number } | null)?.applicationId ?? null;
   const [accepting, setAccepting] = useState(false);
@@ -30,9 +32,13 @@ export default function ProjectDetailPage() {
       localStorage.setItem("lastViewedProjectId", projectId);
 
       setLoading(true);
-      getProjectDetail(Number(projectId))
-        .then((data) => {
+      Promise.all([
+        getProjectDetail(Number(projectId)),
+        getMyProfile().catch(() => null),
+      ])
+        .then(([data, me]) => {
           setProject(data);
+          setMyNickname(me?.nickname ?? null);
         })
         .catch(() => {})
         .finally(() => {
@@ -60,6 +66,10 @@ export default function ProjectDetailPage() {
       </Screen>
     );
   }
+
+  const isMyMember =
+    myNickname != null &&
+    (project.members ?? []).some((m) => m.nickname === myNickname);
 
   return (
     <Screen>
@@ -213,8 +223,8 @@ export default function ProjectDetailPage() {
             {accepting ? "처리 중..." : "수락하기"}
           </button>
         </div>
-      ) : (
-        /* 지원하기 버튼 - 하단 고정, 풀폭 파란 pill */
+      ) : !isMyMember ? (
+        /* 지원하기 버튼 - 이미 프로젝트 멤버(기획자/매칭된 파트너)면 숨김 */
         <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
           <button
             type="button"
@@ -228,7 +238,7 @@ export default function ProjectDetailPage() {
             지원하기
           </button>
         </div>
-      )}
+      ) : null}
     </Screen>
   );
 }

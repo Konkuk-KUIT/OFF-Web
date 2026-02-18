@@ -7,13 +7,15 @@ export type HomeRecruitItem = {
 
 export type HomeProjectItem = {
   projectId: number;
+  id?: number; // API에 따라 id로 올 수 있음
   name: string;
   creatorNickname: string;
   endDate: string;
   progressPercent: number;
   recruitList: HomeRecruitItem[];
   recruiting: boolean;
-  dday: number;
+  dday?: number;
+  dDay?: number; // 백엔드 MyProjectSummary는 dDay
 };
 
 export type HomePartnerItem = {

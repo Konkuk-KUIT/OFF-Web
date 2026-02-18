@@ -179,6 +179,8 @@ export type ProjectDetail = {
     tasks: TaskSummary[];
     members: MemberSummary[];
     dday: number;
+    /** 기획자 본인이거나 이미 프로젝트 멤버이면 false (지원하기 버튼 숨김) */
+    showApplyButton?: boolean;
 };
 
 export async function getProjectDetail(projectId: number): Promise<ProjectDetail> {

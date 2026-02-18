@@ -127,6 +127,14 @@ const aiBannerTextStyle: React.CSSProperties = {
   letterSpacing: "-0.24px",
 };
 
+/** 프로젝트 상세로 쓸 ID (projectId 또는 id) */
+function getProjectDetailId(p: HomeProjectItem): number | null {
+  const id = p.projectId ?? p.id;
+  if (id == null) return null;
+  const n = Number(id);
+  return Number.isFinite(n) ? n : null;
+}
+
 export default function Home() {
   const location = useLocation();
   const { pathname } = location;
@@ -249,44 +257,52 @@ export default function Home() {
       <section className="space-y-4">
         <h2 style={sectionHeadingStyle}>진행중인 프로젝트</h2>
         <ul className="space-y-3">
-          {projects.map((project) => (
-            <li key={project.projectId}>
-              <article className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 style={projectTitleStyle}>{project.name}</h3>
-                  <span style={projectTypeTagStyle}>
-                    D-{project.dday >= 0 ? project.dday : "마감"}
-                  </span>
-                </div>
-                <p className="mt-2" style={projectDescStyle}>
-                  {project.creatorNickname} · 진행률 {project.progressPercent}%
-                </p>
-                {project.recruiting && project.recruitList?.length > 0 && (
-                  <p className="mt-2" style={projectRecruitStyle}>
-                    {formatRecruitSummary(project.recruitList)}
+          {projects.map((project) => {
+            const detailId = getProjectDetailId(project);
+            const dday = project.dday ?? project.dDay ?? 0;
+            return (
+              <li key={detailId ?? project.name}>
+                <article className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 style={projectTitleStyle}>{project.name}</h3>
+                    <span style={projectTypeTagStyle}>
+                      D-{dday >= 0 ? dday : "마감"}
+                    </span>
+                  </div>
+                  <p className="mt-2" style={projectDescStyle}>
+                    {project.creatorNickname} · 진행률 {project.progressPercent}%
                   </p>
-                )}
-                {project.recruiting && (!project.recruitList || project.recruitList.length === 0) && (
-                  <p className="mt-2" style={projectRecruitStyle}>
-                    파트너 모집 중
-                  </p>
-                )}
-                {!project.recruiting && (
-                  <p className="mt-2" style={projectRecruitStyle}>
-                    모집 마감
-                  </p>
-                )}
-                <div className="mt-3 flex justify-end">
-                  <Link
-                    to={`/project/${project.projectId}`}
-                    className="text-sm font-medium text-zinc-700"
-                  >
-                    자세히 보기 &gt;
-                  </Link>
-                </div>
-              </article>
-            </li>
-          ))}
+                  {project.recruiting && project.recruitList?.length > 0 && (
+                    <p className="mt-2" style={projectRecruitStyle}>
+                      {formatRecruitSummary(project.recruitList)}
+                    </p>
+                  )}
+                  {project.recruiting && (!project.recruitList || project.recruitList.length === 0) && (
+                    <p className="mt-2" style={projectRecruitStyle}>
+                      파트너 모집 중
+                    </p>
+                  )}
+                  {!project.recruiting && (
+                    <p className="mt-2" style={projectRecruitStyle}>
+                      모집 마감
+                    </p>
+                  )}
+                  <div className="mt-3 flex justify-end">
+                    {detailId != null ? (
+                      <Link
+                        to={`/project/${detailId}`}
+                        className="text-sm font-medium text-zinc-700"
+                      >
+                        자세히 보기 &gt;
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-zinc-400">자세히 보기 &gt;</span>
+                    )}
+                  </div>
+                </article>
+              </li>
+            );
+          })}
         </ul>
         {projects.length === 0 && (
           <p className="py-4 text-center text-zinc-500">진행 중인 프로젝트가 없습니다.</p>

@@ -115,6 +115,16 @@ export function parseProjectIdFromRedirectUrl(redirectUrl: string): number | nul
 }
 
 /**
+ * 백엔드 redirectUrl(/projects/{id})을 프론트 라우트(/project/{id})로 변환
+ * 결제 성공 알림(PAY) 등에서 사용
+ */
+export function toProjectDetailPath(redirectUrl: string): string | null {
+  const projectId = parseProjectIdFromRedirectUrl(redirectUrl);
+  if (projectId == null) return null;
+  return `/project/${projectId}`;
+}
+
+/**
  * 지원 알림 redirectUrl에서 applicationId 추출
  * 예: "/payments/prepare/7" → 7 (결제 prepare에 쓰는 applicationId)
  */

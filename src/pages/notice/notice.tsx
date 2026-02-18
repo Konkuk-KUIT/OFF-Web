@@ -6,6 +6,7 @@ import {
   getSupportedPartnerState,
   isProjectInvitationType,
   isSupportNotificationType,
+  toProjectDetailPath,
 } from "../../api/notifications";
 import type { NotificationItem } from "../../api/notifications";
 
@@ -69,7 +70,8 @@ export default function Notice() {
                 },
               });
             } else {
-              navigate(notice.redirectUrl);
+              const projectPath = toProjectDetailPath(notice.redirectUrl ?? "");
+              navigate(projectPath ?? notice.redirectUrl);
             }
           }
         })
@@ -92,7 +94,8 @@ export default function Notice() {
                 },
               });
             } else {
-              navigate(notice.redirectUrl);
+              const projectPath = toProjectDetailPath(notice.redirectUrl ?? "");
+              navigate(projectPath ?? notice.redirectUrl);
             }
           }
         });
@@ -205,12 +208,13 @@ export default function Notice() {
                       payload.flowType === "payment" ||
                       payload.applicationId != null ||
                       payload.invitationId != null;
+                    const projectDetailPath = toProjectDetailPath(notice.redirectUrl ?? "");
                     const to =
                       payload.flowType === "invitation"
                         ? "/partner/invitation"
                         : isInviteOrPayment
                           ? "/partner/supported"
-                          : notice.redirectUrl;
+                          : projectDetailPath ?? notice.redirectUrl;
                     return (
                       <Link
                         to={typeof to === "string" ? to : "/partner/supported"}
