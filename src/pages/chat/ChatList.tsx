@@ -4,6 +4,7 @@ import Page from "../../components/Page";
 import { getChatRooms } from "../../api/chat";
 import type { ChatRoomResponse } from "../../api/chat";
 import type { ChatItem, TabType } from "./types";
+import { formatDateTime } from "../../utils/date";
 
 const NEW_MESSAGE_LABEL = "새로운 채팅 메세지";
 const NEW_MESSAGE_TIME = "now";
@@ -13,22 +14,6 @@ const TAB_TO_TYPE: Record<TabType, "PROJECT" | "CONTACT"> = {
   partner: "CONTACT",
 };
 
-function formatChatTime(dateStr?: string): string {
-  if (!dateStr) return "";
-  try {
-    const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) return dateStr;
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const h = String(d.getHours()).padStart(2, "0");
-    const min = String(d.getMinutes()).padStart(2, "0");
-    return `${y}.${m}.${day} ${h}:${min}`;
-  } catch {
-    return dateStr;
-  }
-}
-
 function mapRoomToItem(room: ChatRoomResponse): ChatItem {
   const id = String(room.id ?? room.roomId ?? room.chatRoomId ?? "");
   const nickname =
@@ -36,7 +21,7 @@ function mapRoomToItem(room: ChatRoomResponse): ChatItem {
   const lastMessage =
     room.lastMessageInfo?.content ?? room.lastMessage ?? room.lastMessageContent ?? "";
   const rawTime = room.lastMessageInfo?.createdAt ?? room.lastMessageAt;
-  const timestamp = rawTime ? formatChatTime(rawTime) : "";
+  const timestamp = rawTime ? formatDateTime(rawTime) : "";
   const unreadCount = room.unReadCount ?? room.unreadCount;
   const hasNew = (unreadCount ?? 0) > 0;
   const projectName = room.chatProjectInfo?.projectName ?? room.projectName;

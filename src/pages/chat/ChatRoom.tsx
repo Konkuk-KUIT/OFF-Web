@@ -4,6 +4,7 @@ import {
   getRoomMessages,
   sendMessage as sendMessageApi,
 } from "../../api/chat";
+import { formatTime } from "../../utils/date";
 
 type Message = {
   id: string;
@@ -11,16 +12,6 @@ type Message = {
   isMine: boolean;
   time: string;
 };
-
-function formatMessageTime(createdAt: string): string {
-  try {
-    const d = new Date(createdAt);
-    if (Number.isNaN(d.getTime())) return "";
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  } catch {
-    return "";
-  }
-}
 
 const chatBubbleWrapStyle = (isMine: boolean): React.CSSProperties => ({
   display: "inline-flex",
@@ -90,7 +81,7 @@ function toMessage(item: {
     id: String(item.id),
     text: item.content ?? "",
     isMine,
-    time: formatMessageTime(item.createdAt ?? ""),
+    time: formatTime(item.createdAt ?? ""),
   };
 }
 
@@ -162,7 +153,7 @@ export default function ChatRoom() {
             id: String(d.id),
             text: d.content,
             isMine: d.mine,
-            time: formatMessageTime(d.createdAt),
+            time: formatTime(d.createdAt),
           },
         ]);
       })

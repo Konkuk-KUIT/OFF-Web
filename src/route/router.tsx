@@ -4,7 +4,7 @@ import AppFrame from "../layouts/AppFrame";
 import ProtectedRoute from "./ProtectedRoute";
 
 import Home from "../pages/home/home";
-import Intro from "../pages/auth/intro";
+import IntroWithSplash from "../pages/auth/IntroWithSplash";
 import Login from "../pages/auth/login";
 import Signup from "../pages/auth/signup";
 import ProfileRegister from "../pages/auth/profile-register";
@@ -51,7 +51,7 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* 인트로 (시작 화면) - AppFrame 없음 */}
-        <Route path="/" element={<Intro />} />
+        <Route path="/" element={<IntroWithSplash />} />
 
         <Route element={<AppFrame />}>
           {/* 공개 라우트 (Auth) */}

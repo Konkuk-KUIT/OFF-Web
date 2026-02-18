@@ -9,21 +9,7 @@ import {
   toProjectDetailPath,
 } from "../../api/notifications";
 import type { NotificationItem } from "../../api/notifications";
-
-function formatNoticeDate(createdAt: string): string {
-  try {
-    const d = new Date(createdAt);
-    if (Number.isNaN(d.getTime())) return createdAt;
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const h = String(d.getHours()).padStart(2, "0");
-    const min = String(d.getMinutes()).padStart(2, "0");
-    return `${y}.${m}.${day} ${h}:${min}`;
-  } catch {
-    return createdAt;
-  }
-}
+import { formatDateTime } from "../../utils/date";
 
 export default function Notice() {
   const navigate = useNavigate();
@@ -185,7 +171,7 @@ export default function Notice() {
                 {notice.content}
               </p>
               <p className="notice-card-time text-right">
-                {formatNoticeDate(notice.createdAt)}
+                {formatDateTime(notice.createdAt)}
               </p>
               {notice.redirectUrl && (
                 <div className="mt-2 text-right">
