@@ -70,7 +70,7 @@ export default function ProfileEdit() {
           setShowCompleteToast(true);
           setTimeout(() => {
             setShowCompleteToast(false);
-            navigate("/");
+            navigate("/home");
           }, 2000);
         })
         .catch((err: unknown) => {
@@ -86,7 +86,7 @@ export default function ProfileEdit() {
     setShowCompleteToast(true);
     setTimeout(() => {
       setShowCompleteToast(false);
-      navigate("/");
+      navigate("/home");
     }, 2000);
   };
 

@@ -6,7 +6,7 @@ export default function Headers() {
   const location = useLocation();
 
   const titleMap: Record<string, string> = {
-    "/": "Home",
+    "/home": "Home",
     "/chat": "채팅",
     "/project": "Project",
     "/project/create": "프로젝트 생성",

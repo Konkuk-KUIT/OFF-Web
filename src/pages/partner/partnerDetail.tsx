@@ -121,7 +121,7 @@ export default function PartnerDetail() {
         setShowRequestToast(true);
         setTimeout(() => {
           setShowRequestToast(false);
-          navigate("/");
+          navigate("/home");
         }, 2500);
       })
       .catch((err: unknown) => {

@@ -6,7 +6,8 @@ import ChatIcon from "./bottomNav/icons/ChatIcon";
 import MyIcon from "./bottomNav/icons/MyIcon";
 
 export default function BottomNavLayout() {
-  return (
+  return null; // bottom nav 잠시 숨김
+  /* return (
     <>
       <footer
         className="
@@ -18,12 +19,12 @@ export default function BottomNavLayout() {
           shadow-[0_-4px_10px_rgba(0,0,0,0.1)]
         "
       >
-        <BottomNavItem to="/" end icon={<HomeIcon className="w-6 h-6" />} />
+        <BottomNavItem to="/home" end icon={<HomeIcon className="w-6 h-6" />} />
         <BottomNavItem to="/notice" icon={<AlarmIcon className="w-6 h-6" />} />
         <BottomNavItem to="/project" icon={<ProjectIcon className="w-6 h-6" />} />
         <BottomNavItem to="/chat" icon={<ChatIcon className="w-6 h-6" />} />
         <BottomNavItem to="/my" icon={<MyIcon className="w-6 h-6" />} />
       </footer>
     </>
-  );
+  ); */
 }
