@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Page from "../../components/Page";
 import { getHome } from "../../api/home";
 import type { HomeProjectItem, HomePartnerItem } from "../../api/home";
@@ -9,9 +9,9 @@ const logoUrl = new URL("../../assets/logo.svg", import.meta.url).href;
 
 const ROLE_LABEL: Record<string, string> = {
   PM: "기획",
-  DEVELOPER: "개발자",
-  DESIGNER: "디자이너",
-  MARKETER: "마케터",
+  DEV: "개발자",
+  DES: "디자이너",
+  MAR: "마케터",
 };
 
 function formatRecruitSummary(recruitList: { role: string; count: number }[]): string {
@@ -128,21 +128,33 @@ const aiBannerTextStyle: React.CSSProperties = {
 };
 
 export default function Home() {
+  const location = useLocation();
+  const { pathname } = location;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<HomeProjectItem[]>([]);
   const [partners, setPartners] = useState<HomePartnerItem[]>([]);
 
+  /** 홈 진입 시마다 GET /home 호출해 최신 프로젝트·파트너 목록 갱신 (location.key로 매 진입 시 재호출 보장) */
   useEffect(() => {
+    if (pathname !== "/home") return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    getHome({ page: 1, size: 10 })
+    getHome({ page: 0, size: 100 })
       .then((res) => {
         if (cancelled) return;
-        const { data } = res.data;
-        setProjects(data.projects ?? []);
-        setPartners(data.partners ?? []);
+        // 명세: BaseResponseHomeResponse → data: HomeResponse { showCreateButton, projects, partners }
+        const body = res.data as { data?: { projects?: unknown[]; partners?: unknown[] }; result?: { projects?: unknown[]; partners?: unknown[] } };
+        const payload = body?.data ?? body?.result ?? body;
+        const data = payload as { projects?: HomeProjectItem[]; partners?: HomePartnerItem[]; content?: HomeProjectItem[] };
+        const projectList = Array.isArray(data?.projects) ? data.projects : (Array.isArray(data?.content) ? data.content : []);
+        const partnerList = Array.isArray(data?.partners) ? data.partners : [];
+        if (import.meta.env.DEV) {
+          console.log("[Home] GET /home 프로젝트 수:", projectList.length, "파트너 수:", partnerList.length, "payload 키:", payload ? Object.keys(payload) : []);
+        }
+        setProjects(projectList);
+        setPartners(partnerList);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -160,7 +172,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pathname, location.key]);
 
   if (loading) {
     return (

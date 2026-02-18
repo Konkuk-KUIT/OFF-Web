@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Page from "../../components/Page";
 import { createProject } from "../../api/project";
@@ -154,23 +154,50 @@ export default function PartnerRecruit() {
   const state = location.state as PartnerRecruitState | null;
 
   const [estimateList, setEstimateList] = useState<EstimateItem[]>([]);
+  const [selectedPartnerIds, setSelectedPartnerIds] = useState<Set<number>>(new Set());
   const [deadline, setDeadline] = useState("");
   const [editingDeadline, setEditingDeadline] = useState(false);
   const [serviceSummary, setServiceSummary] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInitializedFromState = useRef(false);
 
   useEffect(() => {
     if (!state?.estimateData) {
       navigate("/project/create", { replace: true });
       return;
     }
-    setEstimateList(state.estimateData.estimateList ?? []);
-    setDeadline(state.estimateData.endDate ?? "");
-    setServiceSummary(state.estimateData.serviceSummary ?? "");
+    // 견적 데이터로 초기값은 한 번만 설정 (사용자가 서비스 요약/마감일 수정한 값이 덮어씌워지지 않도록)
+    if (!hasInitializedFromState.current) {
+      hasInitializedFromState.current = true;
+      const list = state.estimateData.estimateList ?? [];
+      setEstimateList(list);
+      setDeadline(state.estimateData.endDate ?? "");
+      setServiceSummary(state.estimateData.serviceSummary ?? "");
+      const allIds = new Set<number>();
+      list.forEach((item) =>
+        item.candidatePartners?.forEach((p) => allIds.add(p.memberId))
+      );
+      setSelectedPartnerIds(allIds);
+    }
   }, [state, navigate]);
 
-  const totalCost = estimateList.reduce((sum, item) => sum + item.cost * item.count, 0);
+  /** 역할별 cost × 체크된 파트너 수로 예상 비용 계산 */
+  const totalCost = estimateList.reduce((sum, item) => {
+    const checkedCount = (item.candidatePartners ?? []).filter((p) =>
+      selectedPartnerIds.has(p.memberId)
+    ).length;
+    return sum + (item.cost ?? 0) * checkedCount;
+  }, 0);
+
+  const togglePartnerSelection = (memberId: number) => {
+    setSelectedPartnerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
+  };
   const formatDate = (d: string) =>
     d ? d.replace(/-/g, ".") : "";
   const formatPrice = (n: number) => `${n.toLocaleString()}원`;
@@ -196,16 +223,6 @@ export default function PartnerRecruit() {
     if (!state?.formData || !state?.estimateData) return;
     setError(null);
 
-    const recruitmentList = (state.formData.recruitmentList ?? []).map((r) => ({
-      roleId: String(r.roleId),
-      count: Math.max(1, Math.round(Number(r.count))),
-    })).filter((r) => r.roleId && r.count > 0);
-
-    if (recruitmentList.length === 0) {
-      setError("모집 직무를 1개 이상 선택해주세요.");
-      return;
-    }
-
     const normalizedEndDate = normalizeEndDateForApi(deadline);
     if (!normalizedEndDate || !/^\d{4}-\d{2}-\d{2}$/.test(normalizedEndDate)) {
       setError("프로젝트 마감일을 올바른 날짜(YYYY-MM-DD)로 입력해주세요.");
@@ -218,10 +235,29 @@ export default function PartnerRecruit() {
       return;
     }
 
-    const total = estimateList.reduce((s, i) => s + i.cost * i.count, 0);
-    const totalEstimateValue = Math.max(0, Math.round(Number(total)));
+    const totalEstimateValue = Math.max(0, Math.round(totalCost));
     if (totalEstimateValue <= 0) {
-      setError("예상 비용이 0원입니다. 견적 확인에서 역할별 비용(원)을 입력한 뒤 다시 시도해주세요.");
+      setError("예상 비용이 0원입니다. 참여할 파트너를 1명 이상 선택해주세요.");
+      return;
+    }
+
+    /** 체크된 파트너만 반영: 역할별로 체크된 인원 수 + UI에서 수정한 역할당 cost */
+    const recruitmentList = estimateList
+      .map((item) => {
+        const checkedCount = (item.candidatePartners ?? []).filter((p) =>
+          selectedPartnerIds.has(p.memberId)
+        ).length;
+        if (!item.role || checkedCount === 0) return null;
+        return {
+          roleId: item.role,
+          count: checkedCount,
+          cost: Math.max(0, Math.round(item.cost)),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r != null);
+
+    if (recruitmentList.length === 0) {
+      setError("참여할 파트너를 1명 이상 선택해주세요.");
       return;
     }
 
@@ -232,17 +268,21 @@ export default function PartnerRecruit() {
         description: (state.formData.description ?? "").trim(),
         projectTypeId,
         requirement: (state.formData.requirement ?? "").trim(),
-        recruitmentList,
         serviceSummary: (serviceSummary ?? "").trim(),
         endDate: normalizedEndDate,
         totalEstimate: totalEstimateValue,
+        recruitmentList,
       };
-      const { projectId } = await createProject(payload);
-      navigate("/account", { state: { projectId }, replace: true });
+      await createProject(payload);
+      navigate("/home", { replace: true });
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? "프로젝트 확정에 실패했습니다.");
+      const ax = err as { response?: { data?: { message?: string }; status?: number }; message?: string };
+      const serverMsg = ax?.response?.data?.message;
+      const thrownMsg = err instanceof Error ? err.message : null;
+      if (import.meta.env.DEV) {
+        console.error("[handleStartRecruit] 실패:", ax?.response?.status ?? "no response", ax?.response?.data ?? err);
+      }
+      setError(thrownMsg || serverMsg || (ax?.response?.status === 500 ? "서버 내부 오류입니다." : "프로젝트 확정에 실패했습니다."));
     } finally {
       setSubmitting(false);
     }
@@ -356,7 +396,12 @@ export default function PartnerRecruit() {
                   <span className="min-w-0 flex-1" style={cardTitleStyle}>
                     {partner.nickname}
                   </span>
-                  <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" />
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#0060EF]"
+                    checked={selectedPartnerIds.has(partner.memberId)}
+                    onChange={() => togglePartnerSelection(partner.memberId)}
+                  />
                 </div>
                 <p className="mt-1 w-full" style={cardDescStyle}>
                   {partner.introduction}

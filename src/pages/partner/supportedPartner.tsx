@@ -9,10 +9,24 @@ import {
   parseInvitationIdFromRedirectUrl,
   isProjectInvitationType,
 } from "../../api/notifications";
+import { getApplicationDetail, type ApplicationDetailResponse } from "../../api/project";
+import { getRoleLabel } from "../../api/partner";
 
 const chaticonUrl = new URL("../../assets/chaticon.svg", import.meta.url).href;
 
-const MOCK_SUPPORTED_PARTNER = {
+type PartnerDisplayData = {
+  role: string;
+  description: string;
+  projectExperience: string;
+  estimatedQuote: string;
+  intro: string;
+  portfolios: PortfolioItemData[];
+  projectId?: number;
+  serviceSummary?: string;
+  recruitRole?: string;
+};
+
+const MOCK_SUPPORTED_PARTNER: PartnerDisplayData = {
   role: "쿠잇 6기 프론트 개발자",
   description: "앱 개발 프론트 개발자입니다.",
   projectExperience: "5",
@@ -35,18 +49,52 @@ const MOCK_SUPPORTED_PARTNER = {
       linkLabel: "링크3",
       description: "프로필 등록 페이지에서 작성한 포트폴리오 설명",
     },
-  ] as PortfolioItemData[],
+  ],
 };
+
+function applicationToDisplayData(detail: ApplicationDetailResponse): PartnerDisplayData {
+  const roleLabel = getRoleLabel(detail.role);
+  const roleTitle = detail.partnerNickname
+    ? `${detail.partnerNickname} · ${roleLabel}`
+    : roleLabel;
+  return {
+    role: roleTitle,
+    description: detail.partnerIntroduction || "",
+    projectExperience: "-",
+    estimatedQuote: `${(detail.cost ?? 0).toLocaleString()}원`,
+    intro: detail.partnerIntroduction || "",
+    portfolios: [],
+    projectId: detail.projectId,
+    serviceSummary: detail.projectDescription,
+    recruitRole: roleLabel,
+  };
+}
 
 export default function SupportedPartner() {
   const navigate = useNavigate();
   const location = useLocation();
   const [invitationId, setInvitationId] = useState<number | null>(null);
+  const [projectId, setProjectId] = useState<number | null>(null);
+  const [applicationId, setApplicationId] = useState<number | null>(null);
+
+  const [applicationDetail, setApplicationDetail] = useState<ApplicationDetailResponse | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fromState = (location.state as { invitationId?: number } | null)?.invitationId;
-    if (fromState != null) {
-      setInvitationId(fromState);
+    const fromState = location.state as {
+      invitationId?: number;
+      projectId?: number;
+      applicationId?: number;
+    } | null;
+    if (
+      fromState?.invitationId != null ||
+      fromState?.projectId != null ||
+      fromState?.applicationId != null
+    ) {
+      if (fromState.invitationId != null) setInvitationId(fromState.invitationId);
+      if (fromState.projectId != null) setProjectId(fromState.projectId);
+      if (fromState.applicationId != null) setApplicationId(fromState.applicationId);
       return;
     }
     getNotifications({ size: 20 })
@@ -65,10 +113,39 @@ export default function SupportedPartner() {
       .catch(() => setInvitationId(null));
   }, [location.state]);
 
-  const data = MOCK_SUPPORTED_PARTNER;
+  /* 2. 지원 정보 조회 API 호출 → 3. 응답에서 프로젝트 정보(projectId, serviceSummary, recruitRole 등) 확인 */
+  useEffect(() => {
+    if (applicationId == null) return;
+    setDetailLoading(true);
+    setDetailError(null);
+    getApplicationDetail(applicationId)
+      .then(setApplicationDetail)
+      .catch((e) => setDetailError(e instanceof Error ? e.message : "지원 정보를 불러오지 못했습니다."))
+      .finally(() => setDetailLoading(false));
+  }, [applicationId]);
+
+  const displayData = applicationDetail
+    ? applicationToDisplayData(applicationDetail)
+    : MOCK_SUPPORTED_PARTNER;
+  const data = displayData;
+  const partnerDataForConfirm = applicationDetail
+    ? {
+        role: displayData.role,
+        description: displayData.description,
+        projectExperience: displayData.projectExperience,
+        estimatedQuote: displayData.estimatedQuote,
+        intro: displayData.serviceSummary ?? displayData.intro,
+      }
+    : MOCK_SUPPORTED_PARTNER;
 
   return (
     <Page className="pb-28 pt-2">
+      {detailLoading && (
+        <p className="mb-4 text-center text-sm text-zinc-500">지원 정보를 불러오는 중...</p>
+      )}
+      {detailError && (
+        <p className="mb-4 text-center text-sm text-red-600">{detailError}</p>
+      )}
       <div className="space-y-4">
         {/* 파트너 요약 카드 */}
         <section className="rounded-2xl bg-zinc-100 p-4">
@@ -129,7 +206,18 @@ export default function SupportedPartner() {
           type="button"
           onClick={() =>
             navigate("/partner/supported/confirm", {
-              state: invitationId != null ? { invitationId } : undefined,
+              state: {
+                invitationId: invitationId ?? undefined,
+                projectId: projectId ?? displayData.projectId ?? undefined,
+                applicationId:
+                  (applicationDetail?.applicationId && applicationDetail.applicationId > 0)
+                    ? applicationDetail.applicationId
+                    : (applicationId && applicationId > 0 ? applicationId : undefined),
+                partnerId: applicationDetail?.partnerId,
+                partnerData: partnerDataForConfirm,
+                serviceSummary: displayData.serviceSummary,
+                recruitRole: displayData.recruitRole,
+              },
             })
           }
           className="w-full rounded-full bg-[#0060EF] py-4 text-base font-semibold text-white"

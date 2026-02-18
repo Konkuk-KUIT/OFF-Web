@@ -122,10 +122,29 @@ export default function ProjectCreate() {
         replace: true,
       });
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message;
-      setError(msg ?? "견적 조회에 실패했습니다.");
+      const ax = err as {
+        message?: string;
+        code?: string;
+        response?: { status?: number; data?: { message?: string } };
+      };
+      const msgFromServer = ax?.response?.data?.message;
+      if (import.meta.env.DEV) {
+        console.error("[estimateProject] error:", {
+          message: ax?.message,
+          code: ax?.code,
+          status: ax?.response?.status,
+          data: ax?.response?.data,
+        });
+      }
+      if (!ax?.response) {
+        setError(
+          ax?.code === "ECONNABORTED"
+            ? "요청 시간이 초과되었습니다(30초). 서버가 응답하지 않거나 네트워크를 확인해 주세요."
+            : "견적 조회 요청이 네트워크/CORS 문제로 차단되었습니다. (VITE_API_BASE_URL, https/혼합콘텐츠, 서버 CORS 설정 확인)"
+        );
+        return;
+      }
+      setError(msgFromServer ?? "견적 조회에 실패했습니다.");
     } finally {
       setSubmitting(false);
     }

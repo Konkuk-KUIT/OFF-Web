@@ -15,6 +15,7 @@ export default function Headers() {
     "/my": "My",
     "/home/profile-edit": "프로필 수정",
     "/account": "결제하기",
+    "/account/success": "결제 완료",
     "/partner/supported": "지원한 파트너",
     "/partner/supported/confirm": "지원한 파트너",
   };

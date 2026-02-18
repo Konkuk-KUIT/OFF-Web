@@ -24,7 +24,13 @@ import PartnerRecruit from "../pages/project/partnerRecruit";
 import PartnerDetail from "../pages/partner/partnerDetail";
 import SupportedPartner from "../pages/partner/supportedPartner";
 import SupportedPartnerConfirm from "../pages/partner/supportedPartnerConfirm";
+import PartnerInvitation from "../pages/partner/PartnerInvitation";
 import Account from "../pages/account";
+import AccountSuccess from "../pages/accountSuccess";
+import AccountFail from "../pages/accountFail";
+import PaymentPage from "../pages/payment/PaymentPage";
+import PaymentSuccess from "../pages/payment/PaymentSuccess";
+import PaymentFail from "../pages/payment/PaymentFail";
 import ProjectDetailPage from "../pages/project/project_pages/ProjectDetailPage";
 import ProjectEditScreen from "../pages/project/project_pages/ProjectEditPage";
 import TaskCreateScreen from "../pages/project/project_pages/TaskCreatePage";
@@ -58,6 +64,11 @@ export default function AppRouter() {
             {/* 메인 */}
             <Route path="/home" element={<Home />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/account/success" element={<AccountSuccess />} />
+            <Route path="/account/fail" element={<AccountFail />} />
+            <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/fail" element={<PaymentFail />} />
             <Route path="/notice" element={<Notice />} />
             <Route path="/home/profile-edit" element={<ProfileEdit />} />
 
@@ -73,6 +84,7 @@ export default function AppRouter() {
 
             {/* 파트너 */}
             <Route path="/partner/:id" element={<PartnerDetail />} />
+            <Route path="/partner/invitation" element={<PartnerInvitation />} />
             <Route path="/partner/supported" element={<SupportedPartner />} />
             <Route path="/partner/supported/confirm" element={<SupportedPartnerConfirm />} />
 

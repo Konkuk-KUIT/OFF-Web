@@ -61,16 +61,22 @@ export type EstimateProjectResponse = {
 };
 
 export async function estimateProject(payload: EstimateProjectPayload): Promise<EstimateProjectResponse> {
-    const res = await axiosInstance.post<BaseResponse<EstimateProjectResponse>>("/projects/estimate", payload);
+    const res = await axiosInstance.post<BaseResponse<EstimateProjectResponse>>("/projects/estimate", payload, { timeout: 30000 });
     if (!res.data.success) throw new Error(res.data.message || "견적 조회 실패");
     return res.data.data;
 }
 
+/** 확정 생성 시 역할별 roleId, count, cost */
+export type ConfirmRecruitmentItem = {
+    roleId: string;
+    count: number;
+    cost: number;
+};
+
 /**
  * ===== 프로젝트 확정 생성 POST /projects/confirm =====
- * 명세 ConfirmProjectRequest와 동일:
- * name, description, projectTypeId(int64), requirement, serviceSummary, endDate, totalEstimate(int64), recruitmentList[]
- * RecruitmentRequest: roleId(string), count(int32)
+ * Request: name, description, projectTypeId, requirement, serviceSummary, endDate, totalEstimate, recruitmentList[]
+ * recruitmentList[]: { roleId, count, cost }
  */
 export type ConfirmProjectPayload = {
     name: string;
@@ -80,15 +86,59 @@ export type ConfirmProjectPayload = {
     serviceSummary: string;
     endDate: string;
     totalEstimate: number;
-    recruitmentList: RecruitmentRequest[];
+    recruitmentList: ConfirmRecruitmentItem[];
 };
 
 export type ConfirmProjectResponse = {
     projectId: number;
 };
 
+/** 날짜를 YYYY.MM.DD 형식으로 변환 (하이푼 → 점, 월/일 무조건 2자리) */
+function formatEndDateForRequest(dateStr: string): string {
+    if (!dateStr || !dateStr.trim()) return dateStr;
+    const s = dateStr.trim().replace(/-/g, ".");
+    const match = s.match(/^(\d{4})[.\-/]?(\d{1,2})[.\-/]?(\d{1,2})/);
+    if (!match) return dateStr;
+    const [, y, m, d] = match;
+    const mm = String(Number(m)).padStart(2, "0");
+    const dd = String(Number(d)).padStart(2, "0");
+    return `${y}.${mm}.${dd}`;
+}
+
+/** 서버가 기대하는 타입으로 직렬화 (undefined 제거, 숫자 보장) */
+function serializeConfirmPayload(payload: ConfirmProjectPayload): Record<string, unknown> {
+    return {
+        name: payload.name ?? "",
+        description: payload.description ?? "",
+        projectTypeId: Number(payload.projectTypeId),
+        requirement: payload.requirement ?? "",
+        serviceSummary: payload.serviceSummary ?? "",
+        endDate: formatEndDateForRequest(payload.endDate ?? ""),
+        totalEstimate: Number(payload.totalEstimate),
+        recruitmentList: (payload.recruitmentList ?? []).map((item) => ({
+            roleId: String(item.roleId),
+            count: Number(item.count),
+            cost: Number(item.cost),
+        })),
+    };
+}
+
 export async function createProject(payload: ConfirmProjectPayload): Promise<ConfirmProjectResponse> {
-    const res = await axiosInstance.post<BaseResponse<ConfirmProjectResponse>>("/projects/confirm", payload);
+    const body = serializeConfirmPayload(payload);
+    if (import.meta.env.DEV) {
+        console.debug("[createProject] POST /projects/confirm", body);
+        console.log(
+            "%c[REQUEST 형식] POST /projects/confirm",
+            "font-weight: bold; color: #0ea5e9",
+            "\n",
+            JSON.stringify(body, null, 2)
+        );
+    }
+    const res = await axiosInstance.post<BaseResponse<ConfirmProjectResponse>>(
+        "/projects/confirm",
+        body,
+        { timeout: 30000 }
+    );
     if (!res.data.success) throw new Error(res.data.message || "프로젝트 생성 실패");
     return res.data.data;
 }
@@ -216,17 +266,23 @@ export async function invitePartner(projectId: number, payload: InvitePartnerReq
     if (!res.data.success) throw new Error(res.data.message || "파트너 초대 실패");
 }
 
-/** ===== 파트너 제안 수락 (POST /invitations/{invitationId}/accept) ===== */
+/** ===== 파트너 제안 수락 (POST /invitations/{applicationId}/accept) ===== */
 export type AcceptInvitationResponse = {
     applicationId: number;
 };
 
-export async function acceptInvitation(invitationId: number): Promise<AcceptInvitationResponse> {
+/** 가이드: POST /invitations/{applicationId}/accept — 파트너가 초대 수락 시 호출 */
+export async function acceptInvitationByApplicationId(applicationId: number): Promise<AcceptInvitationResponse> {
     const res = await axiosInstance.post<BaseResponse<AcceptInvitationResponse>>(
-        `/invitations/${invitationId}/accept`
+        `/invitations/${applicationId}/accept`
     );
     if (!res.data.success) throw new Error(res.data.message || "제안 수락 실패");
     return res.data.data;
+}
+
+/** 레거시: invitationId로 수락 (동일 path 사용 가능한 경우) */
+export async function acceptInvitation(invitationId: number): Promise<AcceptInvitationResponse> {
+    return acceptInvitationByApplicationId(invitationId);
 }
 
 /** ===== 프로젝트 지원 (POST /projects/{projectId}/applications) - 파트너가 프로젝트에 지원 ===== */
@@ -244,6 +300,32 @@ export async function applyProject(projectId: number, payload: ApplyProjectReque
         payload
     );
     if (!res.data.success) throw new Error(res.data.message || "프로젝트 지원 실패");
+    return res.data.data;
+}
+
+/**
+ * ===== 지원 정보 조회 GET /applications/{applicationId} =====
+ * 지원 상세 정보를 조회합니다. (프로젝트 정보 포함)
+ */
+export type ApplicationDetailResponse = {
+    applicationId: number;
+    projectId: number;
+    projectName: string;
+    projectDescription: string;
+    partnerId: number;
+    partnerNickname: string;
+    partnerIntroduction: string;
+    role: "PM" | "DEV" | "DES" | "MAR";
+    cost: number;
+    status: string;
+    isFromProject: boolean;
+};
+
+export async function getApplicationDetail(applicationId: number): Promise<ApplicationDetailResponse> {
+    const res = await axiosInstance.get<BaseResponse<ApplicationDetailResponse>>(
+        `/applications/${applicationId}`
+    );
+    if (!res.data.success) throw new Error(res.data.message ?? "지원 상세 조회 실패");
     return res.data.data;
 }
 
