@@ -71,7 +71,7 @@ export default function Projects() {
             return (
               <Link
                 key={it.id}
-                to={`/project/${it.id}`}
+                to={{ pathname: `/project/${it.id}`, state: { fromMyProjects: true } }}
                 className="block rounded-2xl bg-gray-100 px-4 py-4 transition-opacity active:opacity-90"
               >
                 <div className="flex items-start justify-between gap-4">

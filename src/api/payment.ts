@@ -17,21 +17,26 @@ async function postWith404Fallback<T>(
   payload: unknown,
   defaultErrorMessage: string
 ): Promise<T> {
+  let lastError: Error | null = null;
   for (const path of paths) {
     try {
       const res = await axiosInstance.post<BaseResponse<T>>(path, payload);
       if (!res.data.success) throw new Error(res.data.message ?? defaultErrorMessage);
       return res.data.data;
     } catch (e: unknown) {
-      const ax = e as { response?: { status?: number; data?: unknown } };
+      const ax = e as { response?: { status?: number; data?: unknown }; message?: string };
       const status = ax?.response?.status;
       const serverMsg = extractMessageFromUnknownResponseData(ax?.response?.data);
       if (status === 404 && serverMsg) throw new Error(serverMsg);
-      if (status === 404) continue;
-      throw e;
+      if (status === 404) {
+        lastError = new Error(`결제 API 경로를 찾을 수 없습니다. (${path})`);
+        continue;
+      }
+      // 400 등 4xx: 서버 메시지가 있으면 그대로 표시 (유효하지 않은 지원 상태 등)
+      throw new Error(serverMsg || defaultErrorMessage);
     }
   }
-  throw new Error(`결제 API 경로를 찾을 수 없습니다. (${paths.join(" 또는 ")})`);
+  throw lastError ?? new Error(`결제 API 경로를 찾을 수 없습니다. (${paths.join(" 또는 ")})`);
 }
 
 /**
