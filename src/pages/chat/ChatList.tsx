@@ -30,17 +30,20 @@ function formatChatTime(dateStr?: string): string {
 }
 
 function mapRoomToItem(room: ChatRoomResponse): ChatItem {
-  const id = String(room.roomId ?? room.chatRoomId ?? "");
-  const nickname = room.nickname ?? room.partnerNickname ?? "알 수 없음";
-  const lastMessage = room.lastMessage ?? room.lastMessageContent ?? "";
-  const rawTime = room.lastMessageAt;
+  const id = String(room.id ?? room.roomId ?? room.chatRoomId ?? "");
+  const nickname =
+    room.opponentResponse?.nickname ?? room.nickname ?? room.partnerNickname ?? "알 수 없음";
+  const lastMessage =
+    room.lastMessageInfo?.content ?? room.lastMessage ?? room.lastMessageContent ?? "";
+  const rawTime = room.lastMessageInfo?.createdAt ?? room.lastMessageAt;
   const timestamp = rawTime ? formatChatTime(rawTime) : "";
-  const unreadCount = room.unreadCount;
+  const unreadCount = room.unReadCount ?? room.unreadCount;
   const hasNew = (unreadCount ?? 0) > 0;
+  const projectName = room.chatProjectInfo?.projectName ?? room.projectName;
   return {
     id,
     nickname,
-    projectName: room.projectName,
+    projectName: projectName ?? undefined,
     lastMessage: hasNew ? NEW_MESSAGE_LABEL : lastMessage,
     timestamp: hasNew ? NEW_MESSAGE_TIME : timestamp,
     unreadCount,
@@ -89,6 +92,12 @@ const detailXsStyle: React.CSSProperties = {
   lineHeight: "18px",
 };
 
+const newMessageLabelStyle: React.CSSProperties = {
+  ...detailXsStyle,
+  color: "#dc2626",
+  fontWeight: 600,
+};
+
 const cardStyle: React.CSSProperties = {
   display: "flex",
   width: "345px",
@@ -125,8 +134,8 @@ function ChatListItem({ item }: { item: ChatItem }) {
         </p>
         <div className="mt-3 flex items-center justify-between gap-2">
           {item.unreadCount != null && item.unreadCount > 0 ? (
-            <span style={detailXsStyle}>
-              {item.unreadCount} new messages
+            <span style={newMessageLabelStyle}>
+              {item.unreadCount === 1 ? "1 new message" : `${item.unreadCount} new messages`}
             </span>
           ) : (
             <span />
@@ -138,7 +147,7 @@ function ChatListItem({ item }: { item: ChatItem }) {
   );
 }
 
-/** 새 메시지가 왔을 때 목록에 보여줄 컴포넌트 (lastMessage: 새로운 채팅 메세지, timestamp: now) */
+/** 새 메시지가 왔을 때 목록에 보여줄 컴포넌트 (lastMessage: 새로운 채팅 메세지, timestamp: now, 1 new message 빨간색) */
 function NewMessageChatItem({ item }: { item: ChatItem }) {
   return (
     <Link
@@ -162,8 +171,8 @@ function NewMessageChatItem({ item }: { item: ChatItem }) {
         </p>
         <div className="mt-3 flex items-center justify-between gap-2">
           {item.unreadCount != null && item.unreadCount > 0 ? (
-            <span style={detailXsStyle}>
-              {item.unreadCount} new messages
+            <span style={newMessageLabelStyle}>
+              {item.unreadCount === 1 ? "1 new message" : `${item.unreadCount} new messages`}
             </span>
           ) : (
             <span />
@@ -180,6 +189,7 @@ export default function ChatList() {
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const fetchingTabRef = useRef<TabType>(activeTab);
 
   const fetchRooms = useCallback((tab: TabType) => {
@@ -190,12 +200,28 @@ export default function ChatList() {
     getChatRooms(type)
       .then((res) => {
         if (fetchingTabRef.current !== tab) return;
-        const list = res.data?.data?.chatRoomResponses ?? [];
-        setChats(list.map(mapRoomToItem));
+        const rawList = res.data?.data?.chatRoomResponses ?? [];
+        const sorted = [...rawList].sort((a, b) => {
+          const tA = a.lastMessageInfo?.createdAt ?? a.lastMessageAt ?? "";
+          const tB = b.lastMessageInfo?.createdAt ?? b.lastMessageAt ?? "";
+          return tB.localeCompare(tA);
+        });
+        setChats(sorted.map(mapRoomToItem));
       })
       .catch((err) => {
         if (fetchingTabRef.current !== tab) return;
-        setError(err?.response?.data?.message ?? "채팅방 목록을 불러오지 못했습니다.");
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message;
+        if (status === 500) {
+          setError(
+            message ??
+              (tab === "partner"
+                ? "파트너 컨택 목록을 불러오지 못했습니다. 서버 오류일 수 있어 잠시 후 다시 시도해 주세요."
+                : "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
+          );
+        } else {
+          setError(message ?? "채팅방 목록을 불러오지 못했습니다.");
+        }
         setChats([]);
       })
       .finally(() => {
@@ -205,7 +231,12 @@ export default function ChatList() {
 
   useEffect(() => {
     fetchRooms(activeTab);
-  }, [activeTab, fetchRooms]);
+  }, [activeTab, fetchRooms, retryKey]);
+
+  const handleRetry = () => {
+    setError(null);
+    setRetryKey((k) => k + 1);
+  };
 
   const tabButtonClass =
     "flex min-w-[74px] h-[28px] py-1 px-2.5 justify-center items-center gap-2.5 rounded-[4px] border-none cursor-pointer transition-colors";
@@ -244,13 +275,34 @@ export default function ChatList() {
       )}
       {error && !loading && (
         <div className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 transition-opacity hover:bg-red-200 active:opacity-90"
+            >
+              다시 시도
+            </button>
+            {activeTab === "partner" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setActiveTab("project");
+                }}
+                className="rounded-lg bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-800 transition-opacity hover:bg-zinc-300 active:opacity-90"
+              >
+                프로젝트 탭 보기
+              </button>
+            )}
+          </div>
         </div>
       )}
       {!loading && !error && chats.length > 0 && (
         <ul className="flex w-full flex-col items-center gap-3">
-          {chats.map((item) => (
-            <li key={item.id} className="flex w-full justify-center">
+          {chats.map((item, index) => (
+            <li key={item.id ? String(item.id) : `room-${index}`} className="flex w-full justify-center">
               {item.timestamp === NEW_MESSAGE_TIME ? (
                 <NewMessageChatItem item={item} />
               ) : (

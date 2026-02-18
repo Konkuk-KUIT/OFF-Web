@@ -29,7 +29,7 @@ const chatBubbleWrapStyle = (isMine: boolean): React.CSSProperties => ({
   gap: "8px",
 });
 
-const messageBubbleStyle: React.CSSProperties = {
+const messageBubbleStyleBase: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   maxWidth: "270px",
@@ -38,7 +38,15 @@ const messageBubbleStyle: React.CSSProperties = {
   alignItems: "flex-start",
   gap: "8px",
   borderRadius: "4px",
+};
+const opponentBubbleStyle: React.CSSProperties = {
+  ...messageBubbleStyleBase,
   background: "var(--blue-background-card-coolgray, #F2F3F5)",
+};
+const myBubbleStyle: React.CSSProperties = {
+  ...messageBubbleStyleBase,
+  background: "rgba(0, 96, 239, 0.15)",
+  color: "#121212",
 };
 
 const timestampStyle: React.CSSProperties = {
@@ -70,12 +78,19 @@ const chatInputBoxStyle: React.CSSProperties = {
   background: "var(--blue-background-card-coolgray, #F2F3F5)",
 };
 
-function toMessage(item: { id: number; content: string; createdAt: string; mine: boolean }): Message {
+function toMessage(item: {
+  id: number;
+  content: string;
+  createdAt: string;
+  mine?: boolean;
+  isMine?: boolean;
+}): Message {
+  const isMine = item.mine ?? item.isMine ?? false;
   return {
     id: String(item.id),
-    text: item.content,
-    isMine: item.mine,
-    time: formatMessageTime(item.createdAt),
+    text: item.content ?? "",
+    isMine,
+    time: formatMessageTime(item.createdAt ?? ""),
   };
 }
 
@@ -101,8 +116,9 @@ export default function ChatRoom() {
     getRoomMessages(roomId, { size: 20 })
       .then((res) => {
         const data = res.data?.data;
-        const list = data?.messageResponses ?? data?.messages ?? [];
-        setMessages(list.map(toMessage));
+        const list = data?.chatMessageResponses ?? data?.messageResponses ?? data?.messages ?? [];
+        const mapped = list.map(toMessage);
+        setMessages(mapped.reverse());
         setHasNext(data?.hasNext ?? false);
       })
       .catch((err) => {
@@ -123,8 +139,8 @@ export default function ChatRoom() {
     getRoomMessages(roomId, { cursor: cursorId, size: 20 })
       .then((res) => {
         const data = res.data?.data;
-        const list = data?.messageResponses ?? data?.messages ?? [];
-        const older = list.map(toMessage);
+        const list = data?.chatMessageResponses ?? data?.messageResponses ?? data?.messages ?? [];
+        const older = list.map(toMessage).reverse();
         setMessages((prev) => [...older, ...prev]);
         setHasNext(data?.hasNext ?? false);
       })
@@ -211,9 +227,8 @@ export default function ChatRoom() {
                   <>
                     <span style={timestampStyle}>{msg.time}</span>
                     <div
-                      className="text-zinc-900"
                       style={{
-                        ...messageBubbleStyle,
+                        ...myBubbleStyle,
                         fontFamily: "Inter, sans-serif",
                         fontSize: "14px",
                       }}
@@ -226,9 +241,8 @@ export default function ChatRoom() {
                 ) : (
                   <>
                     <div
-                      className="text-zinc-900"
                       style={{
-                        ...messageBubbleStyle,
+                        ...opponentBubbleStyle,
                         fontFamily: "Inter, sans-serif",
                         fontSize: "14px",
                       }}
