@@ -4,6 +4,7 @@ import AppFrame from "../layouts/AppFrame";
 import ProtectedRoute from "./ProtectedRoute";
 
 import Home from "../pages/home/home";
+import Intro from "../pages/auth/intro";
 import Login from "../pages/auth/login";
 import Signup from "../pages/auth/signup";
 import ProfileRegister from "../pages/auth/profile-register";
@@ -23,7 +24,13 @@ import PartnerRecruit from "../pages/project/partnerRecruit";
 import PartnerDetail from "../pages/partner/partnerDetail";
 import SupportedPartner from "../pages/partner/supportedPartner";
 import SupportedPartnerConfirm from "../pages/partner/supportedPartnerConfirm";
+import PartnerInvitation from "../pages/partner/PartnerInvitation";
 import Account from "../pages/account";
+import AccountSuccess from "../pages/accountSuccess";
+import AccountFail from "../pages/accountFail";
+import PaymentPage from "../pages/payment/PaymentPage";
+import PaymentSuccess from "../pages/payment/PaymentSuccess";
+import PaymentFail from "../pages/payment/PaymentFail";
 import ProjectDetailPage from "../pages/project/project_pages/ProjectDetailPage";
 import ProjectEditScreen from "../pages/project/project_pages/ProjectEditPage";
 import TaskCreateScreen from "../pages/project/project_pages/TaskCreatePage";
@@ -35,7 +42,7 @@ import ProjectCloseScreen from "../pages/project/project_pages/ProjectClosePage"
 function ProjectIndexRedirect() {
   const lastId = localStorage.getItem("lastViewedProjectId");
   // 마지막으로 본 프로젝트가 있으면 거기로, 없으면 홈으로
-  return <Navigate to={lastId ? `/project/${lastId}` : "/"} replace />;
+  return <Navigate to={lastId ? `/project/${lastId}` : "/home"} replace />;
 }
 
 export default function AppRouter() {
@@ -43,6 +50,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 인트로 (시작 화면) - AppFrame 없음 */}
+        <Route path="/" element={<Intro />} />
+
         <Route element={<AppFrame />}>
           {/* 공개 라우트 (Auth) */}
           <Route path="/login" element={<Login />} />
@@ -52,8 +62,13 @@ export default function AppRouter() {
           {/* 보호 라우트 (Protected) */}
           <Route element={<ProtectedRoute />}>
             {/* 메인 */}
-            <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/account/success" element={<AccountSuccess />} />
+            <Route path="/account/fail" element={<AccountFail />} />
+            <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/fail" element={<PaymentFail />} />
             <Route path="/notice" element={<Notice />} />
             <Route path="/home/profile-edit" element={<ProfileEdit />} />
 
@@ -69,6 +84,7 @@ export default function AppRouter() {
 
             {/* 파트너 */}
             <Route path="/partner/:id" element={<PartnerDetail />} />
+            <Route path="/partner/invitation" element={<PartnerInvitation />} />
             <Route path="/partner/supported" element={<SupportedPartner />} />
             <Route path="/partner/supported/confirm" element={<SupportedPartnerConfirm />} />
 

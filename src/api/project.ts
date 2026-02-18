@@ -23,10 +23,61 @@ import type { BaseResponse } from "./types";
 // { name, description, projectTypeId, requirement, serviceSummary, endDate, totalEstimate, recruitmentList }
 
 export type RecruitmentRequest = {
-    roleId: string; // "PM","DEV","DES","MAR" ? Spec says "roleId" string. Maybe enum?
+    roleId: string;
     count: number;
 };
 
+/** ===== 프로젝트 견적 미리보기 POST /projects/estimate (DB 저장 없음) ===== */
+export type EstimateProjectPayload = {
+    name: string;
+    description: string;
+    projectTypeId: number;
+    requirement: string;
+    recruitmentList: RecruitmentRequest[];
+};
+
+export type EstimateCandidatePartner = {
+    memberId: number;
+    nickname: string;
+    introduction: string;
+    projectCount: number;
+    suggestedCost: number;
+};
+
+export type EstimateItem = {
+    role: string;
+    cost: number;
+    count: number;
+    candidatePartners: EstimateCandidatePartner[];
+};
+
+export type EstimateProjectResponse = {
+    projectType: string;
+    recruitmentRoles: string[];
+    endDate: string;
+    serviceSummary: string;
+    totalEstimate: number;
+    estimateList: EstimateItem[];
+};
+
+export async function estimateProject(payload: EstimateProjectPayload): Promise<EstimateProjectResponse> {
+    const res = await axiosInstance.post<BaseResponse<EstimateProjectResponse>>("/projects/estimate", payload, { timeout: 30000 });
+    if (!res.data.success) throw new Error(res.data.message || "견적 조회 실패");
+    return res.data.data;
+}
+
+/** 확정 생성 시 역할별 roleId, count, cost */
+export type ConfirmRecruitmentItem = {
+    roleId: string;
+    count: number;
+    cost: number;
+};
+
+/**
+ * ===== 프로젝트 확정 생성 POST /projects/confirm =====
+ * Request: name, description, projectTypeId, requirement, serviceSummary, endDate, totalEstimate, recruitmentList[]
+ * recruitmentList[]: { roleId, count, cost }
+ */
 export type ConfirmProjectPayload = {
     name: string;
     description: string;
@@ -35,17 +86,50 @@ export type ConfirmProjectPayload = {
     serviceSummary: string;
     endDate: string;
     totalEstimate: number;
-    recruitmentList: RecruitmentRequest[];
+    recruitmentList: ConfirmRecruitmentItem[];
 };
 
 export type ConfirmProjectResponse = {
     projectId: number;
 };
 
-// Renaming createProject to confirmProject internally or keep name but change endpoint?
-// I'll keep name `createProject` but call `confirmProject` API.
+/** 날짜를 YYYY.MM.DD 형식으로 변환 (하이푼 → 점, 월/일 무조건 2자리) */
+function formatEndDateForRequest(dateStr: string): string {
+    if (!dateStr || !dateStr.trim()) return dateStr;
+    const s = dateStr.trim().replace(/-/g, ".");
+    const match = s.match(/^(\d{4})[.\-/]?(\d{1,2})[.\-/]?(\d{1,2})/);
+    if (!match) return dateStr;
+    const [, y, m, d] = match;
+    const mm = String(Number(m)).padStart(2, "0");
+    const dd = String(Number(d)).padStart(2, "0");
+    return `${y}.${mm}.${dd}`;
+}
+
+/** 서버가 기대하는 타입으로 직렬화 (undefined 제거, 숫자 보장) */
+function serializeConfirmPayload(payload: ConfirmProjectPayload): Record<string, unknown> {
+    return {
+        name: payload.name ?? "",
+        description: payload.description ?? "",
+        projectTypeId: Number(payload.projectTypeId),
+        requirement: payload.requirement ?? "",
+        serviceSummary: payload.serviceSummary ?? "",
+        endDate: formatEndDateForRequest(payload.endDate ?? ""),
+        totalEstimate: Number(payload.totalEstimate),
+        recruitmentList: (payload.recruitmentList ?? []).map((item) => ({
+            roleId: String(item.roleId),
+            count: Number(item.count),
+            cost: Number(item.cost),
+        })),
+    };
+}
+
 export async function createProject(payload: ConfirmProjectPayload): Promise<ConfirmProjectResponse> {
-    const res = await axiosInstance.post<BaseResponse<ConfirmProjectResponse>>("/projects/confirm", payload);
+    const body = serializeConfirmPayload(payload);
+    const res = await axiosInstance.post<BaseResponse<ConfirmProjectResponse>>(
+        "/projects/confirm",
+        body,
+        { timeout: 30000 }
+    );
     if (!res.data.success) throw new Error(res.data.message || "프로젝트 생성 실패");
     return res.data.data;
 }
@@ -168,9 +252,73 @@ export type InvitePartnerRequest = {
     role: string;
 };
 
+/** POST /projects/{projectId}/invitations — 기획자가 파트너에게 제안(초대) */
 export async function invitePartner(projectId: number, payload: InvitePartnerRequest): Promise<void> {
     const res = await axiosInstance.post<BaseResponse<void>>(`/projects/${projectId}/invitations`, payload);
     if (!res.data.success) throw new Error(res.data.message || "파트너 초대 실패");
+}
+
+/** ===== 파트너 제안 수락: POST /invitations/{invitationId}/accept ===== */
+export type AcceptInvitationResponse = {
+    applicationId: number;
+};
+
+/** POST /invitations/{invitationId}/accept — 파트너가 초대 수락 시 호출 (invitationId = 알림/초대 상세의 applicationId) */
+export async function acceptInvitationByApplicationId(applicationId: number): Promise<AcceptInvitationResponse> {
+    const res = await axiosInstance.post<BaseResponse<AcceptInvitationResponse>>(
+        `/invitations/${applicationId}/accept`
+    );
+    if (!res.data.success) throw new Error(res.data.message || "제안 수락 실패");
+    return res.data.data;
+}
+
+/** POST /invitations/{invitationId}/accept — invitationId로 수락 (acceptInvitationByApplicationId와 동일 API) */
+export async function acceptInvitation(invitationId: number): Promise<AcceptInvitationResponse> {
+    return acceptInvitationByApplicationId(invitationId);
+}
+
+/** ===== 프로젝트 지원 (POST /projects/{projectId}/applications) - 파트너가 프로젝트에 지원 ===== */
+export type ApplyProjectRequest = {
+    role: string;
+};
+
+export type ApplyProjectResponse = {
+    applicationId: number;
+};
+
+export async function applyProject(projectId: number, payload: ApplyProjectRequest): Promise<ApplyProjectResponse> {
+    const res = await axiosInstance.post<BaseResponse<ApplyProjectResponse>>(
+        `/projects/${projectId}/applications`,
+        payload
+    );
+    if (!res.data.success) throw new Error(res.data.message || "프로젝트 지원 실패");
+    return res.data.data;
+}
+
+/**
+ * ===== 지원 정보 조회 GET /applications/{applicationId} =====
+ * 지원 상세 정보를 조회합니다. (프로젝트 정보 포함)
+ */
+export type ApplicationDetailResponse = {
+    applicationId: number;
+    projectId: number;
+    projectName: string;
+    projectDescription: string;
+    partnerId: number;
+    partnerNickname: string;
+    partnerIntroduction: string;
+    role: "PM" | "DEV" | "DES" | "MAR";
+    cost: number;
+    status: string;
+    isFromProject: boolean;
+};
+
+export async function getApplicationDetail(applicationId: number): Promise<ApplicationDetailResponse> {
+    const res = await axiosInstance.get<BaseResponse<ApplicationDetailResponse>>(
+        `/applications/${applicationId}`
+    );
+    if (!res.data.success) throw new Error(res.data.message ?? "지원 상세 조회 실패");
+    return res.data.data;
 }
 
 /** ===== 파트너 모집 (Open Recruitment) - Spec Mismatch ===== */
@@ -196,11 +344,7 @@ export type RecruitPartnerPayload = {
     }
 };
 
-export async function recruitPartner(_projectId: number, payload: RecruitPartnerPayload): Promise<void> {
-    console.warn("recruitPartner API not found in spec. Payload:", payload);
-    // throw new Error("Partner Recruitment API is not available in the current specification.");
-    // For now, we simulate success or fail?
-    // If I throw, the user can't use the page.
+export async function recruitPartner(_projectId: number, _payload: RecruitPartnerPayload): Promise<void> {
     alert("현재 API 명세서에 '파트너 모집(Open Recruitment)' 엔드포인트가 없습니다. (InvitePartner만 존재)");
 }
 

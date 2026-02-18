@@ -2,6 +2,7 @@ export type PortfolioItemData = {
   title: string;
   linkLabel: string;
   description: string;
+  link?: string;
 };
 
 const cardStyle: React.CSSProperties = {
@@ -40,13 +41,16 @@ export default function PartnerPortfolioCard({
   title,
   linkLabel,
   description,
+  link,
 }: Props) {
   return (
     <div className="w-full overflow-hidden" style={cardStyle}>
       <div className="flex items-center text-white" style={titleBarStyle}>
         <span className="text-sm font-medium">{title}</span>
         <a
-          href="#"
+          href={link || "#"}
+          target={link ? "_blank" : undefined}
+          rel={link ? "noopener noreferrer" : undefined}
           className="shrink-0 text-sm font-medium text-white"
           style={linkBoxStyle}
         >

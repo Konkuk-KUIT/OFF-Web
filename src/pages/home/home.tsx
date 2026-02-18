@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Page from "../../components/Page";
 import { getHome } from "../../api/home";
 import type { HomeProjectItem, HomePartnerItem } from "../../api/home";
@@ -9,9 +9,9 @@ const logoUrl = new URL("../../assets/logo.svg", import.meta.url).href;
 
 const ROLE_LABEL: Record<string, string> = {
   PM: "기획",
-  DEVELOPER: "개발자",
-  DESIGNER: "디자이너",
-  MARKETER: "마케터",
+  DEV: "개발자",
+  DES: "디자이너",
+  MAR: "마케터",
 };
 
 function formatRecruitSummary(recruitList: { role: string; count: number }[]): string {
@@ -128,23 +128,39 @@ const aiBannerTextStyle: React.CSSProperties = {
 };
 
 export default function Home() {
+  const location = useLocation();
+  const { pathname } = location;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateButton, setShowCreateButton] = useState(true);
   const [projects, setProjects] = useState<HomeProjectItem[]>([]);
   const [partners, setPartners] = useState<HomePartnerItem[]>([]);
 
+  /**
+   * GET /home — projects가 배열이면 그대로, { content: [...] }면 content 사용.
+   * 백엔드에 전달할 문구: "홈 화면 API(GET /home) 호출 시 프론트에서 size=20을 보내고 있는데,
+   * 서버 응답이 계속 3개로 고정됩니다. 컨트롤러에서 Pageable 기본값이 3이거나 size 파라미터를
+   * 무시하고 있는지 확인 부탁드려요."
+   */
   useEffect(() => {
+    if (pathname !== "/home") return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    getHome({ page: 1, size: 10 })
+
+    getHome({ page: 0, size: 20 })
       .then((res) => {
         if (cancelled) return;
-        const { data } = res.data;
-        setShowCreateButton(data.showCreateButton);
-        setProjects(data.projects ?? []);
-        setPartners(data.partners ?? []);
+        const body = res.data as { data?: { projects?: unknown; partners?: unknown[] }; result?: { projects?: unknown; partners?: unknown[] } };
+        const payload = (body?.data ?? body?.result ?? body) as { projects?: unknown; partners?: HomePartnerItem[] } | undefined;
+        const rawProjects = payload?.projects;
+        const projectList: HomeProjectItem[] = Array.isArray(rawProjects)
+          ? rawProjects
+          : (rawProjects && typeof rawProjects === "object" && Array.isArray((rawProjects as { content?: HomeProjectItem[] }).content))
+            ? (rawProjects as { content: HomeProjectItem[] }).content
+            : [];
+        const partnerList = Array.isArray(payload?.partners) ? payload.partners : [];
+        setProjects(projectList);
+        setPartners(partnerList);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -162,7 +178,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pathname, location.key]);
 
   if (loading) {
     return (
@@ -216,19 +232,17 @@ export default function Home() {
             <p style={aiBannerTextStyle}>프로젝트를 관리하세요</p>
           </div>
         </div>
-        {showCreateButton && (
-          <div className="relative z-10 mt-4 flex justify-center">
-            <Link
-              to="/project/create"
-              className="inline-flex h-[50px] min-w-0 shrink-0 items-center justify-center rounded-[50px] bg-[var(--gray-gray_900,#121212)] px-8 py-[14px] text-white whitespace-nowrap"
-              style={{
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              프로젝트 생성하기
-            </Link>
-          </div>
-        )}
+        <div className="relative z-10 mt-4 flex justify-center">
+          <Link
+            to="/project/create"
+            className="inline-flex h-[50px] min-w-0 shrink-0 items-center justify-center rounded-[50px] bg-[var(--gray-gray_900,#121212)] px-8 py-[14px] text-white whitespace-nowrap"
+            style={{
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            프로젝트 생성하기
+          </Link>
+        </div>
       </section>
 
       {/* 진행중인 프로젝트 */}

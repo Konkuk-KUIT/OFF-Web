@@ -2,7 +2,8 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
+  // Bearer 토큰 사용 중이므로 쿠키 전송 불필요 (CORS 이슈 완화)
+  withCredentials: false,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

@@ -9,7 +9,7 @@ export default function ProtectedRoute() {
 
   if (!loggedIn) {
     return (
-      <Navigate to="/login" replace state={{ from: location.pathname }} />
+      <Navigate to="/login" replace state={{ from: { pathname: location.pathname } }} />
     );
   }
 

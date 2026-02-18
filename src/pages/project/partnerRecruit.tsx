@@ -1,6 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import Page from "../../components/Page";
+import { createProject } from "../../api/project";
+import type {
+  EstimateProjectResponse,
+  EstimateItem,
+  ConfirmProjectPayload,
+} from "../../api/project";
 
 const sectionLabelStyle: React.CSSProperties = {
   display: "flex",
@@ -132,59 +138,180 @@ const estimatedCostStyle: React.CSSProperties = {
 };
 
 
+type FormDataForConfirm = Omit<
+  ConfirmProjectPayload,
+  "serviceSummary" | "endDate" | "totalEstimate"
+>;
+
+type PartnerRecruitState = {
+  estimateData: EstimateProjectResponse;
+  formData: FormDataForConfirm;
+};
+
 export default function PartnerRecruit() {
   const navigate = useNavigate();
-  const [deadline, setDeadline] = useState("2026-01-01");
-  const [editingDeadline, setEditingDeadline] = useState(false);
-  const [designerPrice, setDesignerPrice] = useState(80000);
-  const [developerPrice, setDeveloperPrice] = useState(150000);
-  const [editingDesignerPrice, setEditingDesignerPrice] = useState(false);
-  const [editingDeveloperPrice, setEditingDeveloperPrice] = useState(false);
-  const [serviceSummary, setServiceSummary] = useState(
-    "서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리 서비스 설명 및 요구사항 바탕 AI로 정리"
-  );
-  const [designerCardTitle, setDesignerCardTitle] = useState("쿠잇 6기 프론트 개발자");
-  const [designerCardDesc, setDesignerCardDesc] = useState("UX/UI 특화 디자이너입니다");
-  const [designerCardExp, setDesignerCardExp] = useState("5회 이상");
-  const [developerCardTitle, setDeveloperCardTitle] = useState("쿠잇 6기 프론트 개발자");
-  const [developerCardDesc, setDeveloperCardDesc] = useState("UX/UI 특화 디자이너입니다");
-  const [developerCardExp, setDeveloperCardExp] = useState("3회");
+  const location = useLocation();
+  const state = location.state as PartnerRecruitState | null;
 
-  const totalCost = designerPrice + developerPrice;
+  const [estimateList, setEstimateList] = useState<EstimateItem[]>([]);
+  const [selectedPartnerIds, setSelectedPartnerIds] = useState<Set<number>>(new Set());
+  const [deadline, setDeadline] = useState("");
+  const [editingDeadline, setEditingDeadline] = useState(false);
+  const [serviceSummary, setServiceSummary] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasInitializedFromState = useRef(false);
+
+  useEffect(() => {
+    if (!state?.estimateData) {
+      navigate("/project/create", { replace: true });
+      return;
+    }
+    // 견적 데이터로 초기값은 한 번만 설정 (사용자가 서비스 요약/마감일 수정한 값이 덮어씌워지지 않도록)
+    if (!hasInitializedFromState.current) {
+      hasInitializedFromState.current = true;
+      const list = state.estimateData.estimateList ?? [];
+      setEstimateList(list);
+      setDeadline(state.estimateData.endDate ?? "");
+      setServiceSummary(state.estimateData.serviceSummary ?? "");
+      const allIds = new Set<number>();
+      list.forEach((item) =>
+        item.candidatePartners?.forEach((p) => allIds.add(p.memberId))
+      );
+      setSelectedPartnerIds(allIds);
+    }
+  }, [state, navigate]);
+
+  /** 역할별 cost × 체크된 파트너 수로 예상 비용 계산 */
+  const totalCost = estimateList.reduce((sum, item) => {
+    const checkedCount = (item.candidatePartners ?? []).filter((p) =>
+      selectedPartnerIds.has(p.memberId)
+    ).length;
+    return sum + (item.cost ?? 0) * checkedCount;
+  }, 0);
+
+  const togglePartnerSelection = (memberId: number) => {
+    setSelectedPartnerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
+  };
   const formatDate = (d: string) =>
-    d ? d.split("-").join(".") : "";
+    d ? d.replace(/-/g, ".") : "";
   const formatPrice = (n: number) => `${n.toLocaleString()}원`;
+
+  const updateEstimateCost = (index: number, cost: number) => {
+    setEstimateList((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, cost } : item))
+    );
+  };
+
+  /** 백엔드(Java LocalDate 등)는 보통 yyyy-MM-dd만 허용 */
+  const normalizeEndDateForApi = (dateStr: string): string => {
+    if (!dateStr || !dateStr.trim()) return dateStr;
+    const trimmed = dateStr.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    if (trimmed.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+    const dotMatch = trimmed.match(/^(\d{4})\.(\d{2})\.(\d{2})/);
+    if (dotMatch) return `${dotMatch[1]}-${dotMatch[2]}-${dotMatch[3]}`;
+    return trimmed;
+  };
+
+  const handleStartRecruit = async () => {
+    if (!state?.formData || !state?.estimateData) return;
+    setError(null);
+
+    const normalizedEndDate = normalizeEndDateForApi(deadline);
+    if (!normalizedEndDate || !/^\d{4}-\d{2}-\d{2}$/.test(normalizedEndDate)) {
+      setError("프로젝트 마감일을 올바른 날짜(YYYY-MM-DD)로 입력해주세요.");
+      return;
+    }
+
+    const projectTypeId = Math.round(Number(state.formData.projectTypeId)) || 1;
+    if (projectTypeId < 1 || projectTypeId > 4) {
+      setError("프로젝트 유형이 올바르지 않습니다.");
+      return;
+    }
+
+    const totalEstimateValue = Math.max(0, Math.round(totalCost));
+    if (totalEstimateValue <= 0) {
+      setError("예상 비용이 0원입니다. 참여할 파트너를 1명 이상 선택해주세요.");
+      return;
+    }
+
+    /** 체크된 파트너만 반영: 역할별로 체크된 인원 수 + UI에서 수정한 역할당 cost */
+    const recruitmentList = estimateList
+      .map((item) => {
+        const checkedCount = (item.candidatePartners ?? []).filter((p) =>
+          selectedPartnerIds.has(p.memberId)
+        ).length;
+        if (!item.role || checkedCount === 0) return null;
+        return {
+          roleId: item.role,
+          count: checkedCount,
+          cost: Math.max(0, Math.round(item.cost)),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r != null);
+
+    if (recruitmentList.length === 0) {
+      setError("참여할 파트너를 1명 이상 선택해주세요.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload: ConfirmProjectPayload = {
+        name: (state.formData.name ?? "").trim() || "제목 없음",
+        description: (state.formData.description ?? "").trim(),
+        projectTypeId,
+        requirement: (state.formData.requirement ?? "").trim(),
+        serviceSummary: (serviceSummary ?? "").trim(),
+        endDate: normalizedEndDate,
+        totalEstimate: totalEstimateValue,
+        recruitmentList,
+      };
+      await createProject(payload);
+      navigate("/home", { replace: true });
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string }; status?: number }; message?: string };
+      const serverMsg = ax?.response?.data?.message;
+      const thrownMsg = err instanceof Error ? err.message : null;
+      setError(thrownMsg || serverMsg || (ax?.response?.status === 500 ? "서버 내부 오류입니다." : "프로젝트 확정에 실패했습니다."));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!state?.estimateData) return null;
+  const { projectType, recruitmentRoles } = state.estimateData;
 
   return (
     <Page className="space-y-6 pb-28">
       {/* 프로젝트 유형 */}
       <section>
         <label className="mb-1 block" style={sectionLabelStyle}>프로젝트 유형</label>
-        <span style={webDevTagStyle}>웹 개발</span>
+        <span style={webDevTagStyle}>{projectType}</span>
       </section>
 
       {/* 파트너 모집 분야 */}
       <section>
         <label className="mb-1 block" style={sectionLabelStyle}>파트너 모집 분야</label>
         <div className="flex flex-wrap gap-2">
-          <span
-            style={{
-              ...tagButtonStyle,
-              background: "#121212",
-              color: "white",
-            }}
-          >
-            개발자
-          </span>
-          <span
-            style={{
-              ...tagButtonStyle,
-              background: "#121212",
-              color: "white",
-            }}
-          >
-            디자이너
-          </span>
+          {recruitmentRoles.map((role) => (
+            <span
+              key={role}
+              style={{
+                ...tagButtonStyle,
+                background: "#121212",
+                color: "white",
+              }}
+            >
+              {role}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -241,153 +368,59 @@ export default function PartnerRecruit() {
       <section className="space-y-4">
         <h2 className="mb-1 block" style={sectionLabelStyle}>견적 확인</h2>
 
-        {/* 디자이너 */}
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span style={roleHeadingStyle}>디자이너</span>
-            <div className="flex items-center gap-1">
-              {editingDesignerPrice ? (
-                <>
+        {estimateList.map((item, index) => (
+          <div key={`${item.role}-${index}`}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span style={roleHeadingStyle}>{item.role}</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={item.cost}
+                  onChange={(e) =>
+                    updateEstimateCost(index, Number(e.target.value) || 0)
+                  }
+                  className="w-24 rounded border border-zinc-200 px-2 py-1 text-right text-sm"
+                />
+                <span style={priceStyle}>원</span>
+              </div>
+            </div>
+            {item.candidatePartners?.map((partner) => (
+              <article
+                key={partner.memberId}
+                className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1" style={cardTitleStyle}>
+                    {partner.nickname}
+                  </span>
                   <input
-                    type="number"
-                    value={designerPrice}
-                    onChange={(e) =>
-                      setDesignerPrice(Number(e.target.value) || 0)
-                    }
-                    className="w-24 rounded border border-zinc-200 px-2 py-1 text-right text-sm"
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#0060EF]"
+                    checked={selectedPartnerIds.has(partner.memberId)}
+                    onChange={() => togglePartnerSelection(partner.memberId)}
                   />
-                  <span style={priceStyle}>원</span>
-                  <button
-                    type="button"
-                    style={editBtnStyle}
-                    onClick={() => setEditingDesignerPrice(false)}
+                </div>
+                <p className="mt-1 w-full" style={cardDescStyle}>
+                  {partner.introduction}
+                </p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span style={projectExpLabelStyle}>프로젝트 경험</span>
+                  <span style={projectExpValueStyle}>
+                    {partner.projectCount}회
+                  </span>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <Link
+                    to={`/partner/${partner.memberId}`}
+                    className="text-sm font-medium text-zinc-700 hover:text-zinc-900"
                   >
-                    확인
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span style={priceStyle}>{formatPrice(designerPrice)}</span>
-                  <button
-                    type="button"
-                    style={editBtnStyle}
-                    onClick={() => setEditingDesignerPrice(true)}
-                  >
-                    수정
-                  </button>
-                </>
-              )}
-            </div>
+                    자세히 보기 &gt;
+                  </Link>
+                </div>
+              </article>
+            ))}
           </div>
-          <article className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-            <div className="flex items-start justify-between gap-2">
-              <input
-                type="text"
-                value={designerCardTitle}
-                onChange={(e) => setDesignerCardTitle(e.target.value)}
-                className="min-w-0 flex-1 bg-transparent outline-none"
-                style={cardTitleStyle}
-              />
-              <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" />
-            </div>
-            <input
-              type="text"
-              value={designerCardDesc}
-              onChange={(e) => setDesignerCardDesc(e.target.value)}
-              className="mt-1 w-full bg-transparent outline-none"
-              style={cardDescStyle}
-            />
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span style={projectExpLabelStyle}>프로젝트 경험</span>
-              <input
-                type="text"
-                value={designerCardExp}
-                onChange={(e) => setDesignerCardExp(e.target.value)}
-                className="w-20 bg-transparent text-right outline-none"
-                style={projectExpValueStyle}
-              />
-            </div>
-            <div className="mt-3 flex justify-end">
-              <button type="button" className="text-sm font-medium text-zinc-700">
-                자세히 보기 &gt;
-              </button>
-            </div>
-          </article>
-        </div>
-
-        {/* 개발자 */}
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span style={roleHeadingStyle}>개발자</span>
-            <div className="flex items-center gap-1">
-              {editingDeveloperPrice ? (
-                <>
-                  <input
-                    type="number"
-                    value={developerPrice}
-                    onChange={(e) =>
-                      setDeveloperPrice(Number(e.target.value) || 0)
-                    }
-                    className="w-24 rounded border border-zinc-200 px-2 py-1 text-right text-sm"
-                  />
-                  <span style={priceStyle}>원</span>
-                  <button
-                    type="button"
-                    style={editBtnStyle}
-                    onClick={() => setEditingDeveloperPrice(false)}
-                  >
-                    확인
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span style={priceStyle}>{formatPrice(developerPrice)}</span>
-                  <button
-                    type="button"
-                    style={editBtnStyle}
-                    onClick={() => setEditingDeveloperPrice(true)}
-                  >
-                    수정
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-          <article className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-            <div className="flex items-start justify-between gap-2">
-              <input
-                type="text"
-                value={developerCardTitle}
-                onChange={(e) => setDeveloperCardTitle(e.target.value)}
-                className="min-w-0 flex-1 bg-transparent outline-none"
-                style={cardTitleStyle}
-              />
-              <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" />
-            </div>
-            <input
-              type="text"
-              value={developerCardDesc}
-              onChange={(e) => setDeveloperCardDesc(e.target.value)}
-              className="mt-1 w-full bg-transparent outline-none"
-              style={cardDescStyle}
-            />
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span style={projectExpLabelStyle}>프로젝트 경험</span>
-              <input
-                type="text"
-                value={developerCardExp}
-                onChange={(e) => setDeveloperCardExp(e.target.value)}
-                className="w-20 bg-transparent text-right outline-none"
-                style={projectExpValueStyle}
-              />
-            </div>
-            <div className="mt-3 flex justify-end">
-              <button type="button" className="text-sm font-medium text-zinc-700">
-                자세히 보기 &gt;
-              </button>
-            </div>
-          </article>
-        </div>
+        ))}
       </section>
 
       {/* 예상 비용 */}
@@ -399,14 +432,19 @@ export default function PartnerRecruit() {
         <span className="font-semibold">{formatPrice(totalCost)}</span>
       </div>
 
-      {/* 파트너 모집 시작하기 - 홈으로 이동 */}
+      {error && (
+        <p className="text-sm text-red-600">{error}</p>
+      )}
+
+      {/* 파트너 모집 시작하기 → 결제 화면 */}
       <div className="flex justify-center pt-2">
         <button
           type="button"
-          onClick={() => navigate("/")}
-          className="flex h-12 w-full max-w-[340px] items-center justify-center rounded-full bg-[#0060EF] text-base font-semibold text-white"
+          onClick={handleStartRecruit}
+          disabled={submitting}
+          className="flex h-12 w-full max-w-[340px] items-center justify-center rounded-full bg-[#0060EF] text-base font-semibold text-white disabled:opacity-50"
         >
-          파트너 모집 시작하기
+          {submitting ? "처리 중..." : "파트너 모집 시작하기"}
         </button>
       </div>
     </Page>

@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   getNotifications,
   markNotificationAsRead,
+  getSupportedPartnerState,
+  isProjectInvitationType,
+  isSupportNotificationType,
 } from "../../api/notifications";
 import type { NotificationItem } from "../../api/notifications";
 
@@ -51,15 +54,46 @@ export default function Notice() {
           if (isExternal) {
             window.open(notice.redirectUrl, "_blank", "noopener,noreferrer");
           } else {
-            navigate(notice.redirectUrl);
+            const isInvitation = isProjectInvitationType(notice.type);
+            const isSupport = isSupportNotificationType(notice.type);
+            if (isInvitation || isSupport) {
+              const payload = getSupportedPartnerState(notice);
+              const to =
+                payload.flowType === "invitation"
+                  ? "/partner/invitation"
+                  : "/partner/supported";
+              navigate(to, {
+                state: {
+                  ...payload,
+                  notificationId: notice.notificationId,
+                },
+              });
+            } else {
+              navigate(notice.redirectUrl);
+            }
           }
         })
         .catch(() => {
-          // 읽음 처리 실패해도 이동은 허용
           if (isExternal) {
             window.open(notice.redirectUrl, "_blank", "noopener,noreferrer");
           } else {
-            navigate(notice.redirectUrl);
+            const isInvitation = isProjectInvitationType(notice.type);
+            const isSupport = isSupportNotificationType(notice.type);
+            if (isInvitation || isSupport) {
+              const payload = getSupportedPartnerState(notice);
+              const to =
+                payload.flowType === "invitation"
+                  ? "/partner/invitation"
+                  : "/partner/supported";
+              navigate(to, {
+                state: {
+                  ...payload,
+                  notificationId: notice.notificationId,
+                },
+              });
+            } else {
+              navigate(notice.redirectUrl);
+            }
           }
         });
     },
@@ -164,17 +198,35 @@ export default function Notice() {
                     >
                       자세히 보기 &gt;
                     </a>
-                  ) : (
-                    <Link
-                      to={notice.redirectUrl}
-                      className="text-sm font-medium text-zinc-700"
-                      onClick={(e) =>
-                        handleNotificationLinkClick(e, notice, false)
-                      }
-                    >
-                      자세히 보기 &gt;
-                    </Link>
-                  )}
+                  ) : (() => {
+                    const payload = getSupportedPartnerState(notice);
+                    const isInviteOrPayment =
+                      payload.flowType === "invitation" ||
+                      payload.flowType === "payment" ||
+                      payload.applicationId != null ||
+                      payload.invitationId != null;
+                    const to =
+                      payload.flowType === "invitation"
+                        ? "/partner/invitation"
+                        : isInviteOrPayment
+                          ? "/partner/supported"
+                          : notice.redirectUrl;
+                    return (
+                      <Link
+                        to={typeof to === "string" ? to : "/partner/supported"}
+                        state={{
+                          ...payload,
+                          notificationId: notice.notificationId,
+                        }}
+                        className="text-sm font-medium text-zinc-700"
+                        onClick={(e) =>
+                          handleNotificationLinkClick(e, notice, false)
+                        }
+                      >
+                        자세히 보기 &gt;
+                      </Link>
+                    );
+                  })()}
                 </div>
               )}
             </li>

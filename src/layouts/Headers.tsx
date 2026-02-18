@@ -9,7 +9,7 @@ export default function Headers() {
 
 
   // 뒤로가기 헤더가 필요한 페이지들 (/partner/:id 포함)
-  const prevHeaderRoutes = ["/chat", "/project", "/project/create", "/project/partner-recruit", "/notice", "/my", "/my/edit", "/home/profile-edit", "/my/payments", "/my/invitations", "/my/projects", "/account", "/partner/supported", "/partner/supported/confirm"];
+  const prevHeaderRoutes = ["/chat", "/project", "/project/create", "/project/partner-recruit", "/notice", "/my", "/my/edit", "/home/profile-edit", "/my/payments", "/my/invitations", "/my/projects", "/account", "/account/success", "/partner/supported", "/partner/supported/confirm"];
   const isPrev = prevHeaderRoutes.includes(pathname) || 
                [/^\/partner\//, /^\/project\/\d+/, /^\/chat\/[^/]+/].some(regex => regex.test(pathname));
 

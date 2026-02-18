@@ -9,7 +9,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/home";
 
   const isValidEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
