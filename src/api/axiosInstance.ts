@@ -4,7 +4,7 @@ import axios from "axios";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL && !import.meta.env.VITE_API_BASE_URL.startsWith("/")
     ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")
-    : "https://offf.kro.kr:8080";
+    : "https://offf.kro.kr";
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
