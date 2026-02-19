@@ -13,7 +13,7 @@ import {
   SubTitle,
 } from "../components/_ui";
 import { getProjectDetail, acceptInvitationByApplicationId, type ProjectDetail } from "../../../api/project";
-import { getMyProfile } from "../../../api/member";
+import { getMyProfile, getMyProjects } from "../../../api/member";
 
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
@@ -22,6 +22,8 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [myNickname, setMyNickname] = useState<string | null>(null);
+  /** 참여한 프로젝트 목록에 있으면 true (하단 네비 폴더 → 마지막 프로젝트 진입 시 지원하기 숨김) */
+  const [isInMyProjectsList, setIsInMyProjectsList] = useState(false);
   /** 알림(파트너 제안)에서 들어온 경우: 수락하기 플로우 */
   const applicationId = (location.state as { applicationId?: number } | null)?.applicationId ?? null;
   const [accepting, setAccepting] = useState(false);
@@ -30,15 +32,17 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     if (projectId) {
       localStorage.setItem("lastViewedProjectId", projectId);
-
+      const pid = Number(projectId);
       setLoading(true);
       Promise.all([
-        getProjectDetail(Number(projectId)),
+        getProjectDetail(pid),
         getMyProfile().catch(() => null),
+        getMyProjects().catch(() => ({ projectList: [] as { id: number }[] })),
       ])
-        .then(([data, me]) => {
+        .then(([data, me, myProjects]) => {
           setProject(data);
           setMyNickname(me?.nickname ?? null);
+          setIsInMyProjectsList((myProjects.projectList ?? []).some((p) => p.id === pid));
         })
         .catch(() => {})
         .finally(() => {
@@ -70,6 +74,8 @@ export default function ProjectDetailPage() {
   const isMyMember =
     myNickname != null &&
     (project.members ?? []).some((m) => m.nickname === myNickname);
+  /** 매칭된 프로젝트(멤버 또는 참여 목록에 있음)면 지원하기 숨김 */
+  const shouldHideApplyButton = isMyMember || isInMyProjectsList;
 
   return (
     <Screen>
@@ -223,8 +229,8 @@ export default function ProjectDetailPage() {
             {accepting ? "처리 중..." : "수락하기"}
           </button>
         </div>
-      ) : !isMyMember ? (
-        /* 지원하기 버튼 - 이미 프로젝트 멤버(기획자/매칭된 파트너)면 숨김 */
+      ) : !shouldHideApplyButton ? (
+        /* 지원하기 버튼 - 매칭된 프로젝트(멤버/참여 목록 포함)면 숨김 */
         <div className="fixed bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-screen-sm border-t border-zinc-100 bg-white px-4 pb-8 pt-4">
           <button
             type="button"
