@@ -1,7 +1,13 @@
 import axios from "axios";
 
+/** 백엔드 API 주소. Vercel 등 배포 시 env에 VITE_API_BASE_URL 설정 필요. */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL && !import.meta.env.VITE_API_BASE_URL.startsWith("/")
+    ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")
+    : "https://offf.kro.kr:8080";
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: API_BASE_URL,
   // Bearer 토큰 사용 중이므로 쿠키 전송 불필요 (CORS 이슈 완화)
   withCredentials: false,
   timeout: 10000,
